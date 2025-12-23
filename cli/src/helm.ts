@@ -1,6 +1,7 @@
 import { execFileSync } from "child_process";
 import { parseAllDocuments } from "yaml";
 import { K8sResource } from "./types";
+import { isK8sResource } from "./validation";
 
 export function renderHelmChart(
   chartPath: string,
@@ -25,8 +26,8 @@ export function renderHelmChart(
   try {
     for (const doc of parseAllDocuments(output)) {
       const obj = doc.toJS();
-      if (obj?.kind && obj?.apiVersion) {
-        resources.push(obj as K8sResource);
+      if (isK8sResource(obj)) {
+        resources.push(obj);
       }
     }
   } catch (err) {

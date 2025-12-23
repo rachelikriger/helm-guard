@@ -1,6 +1,7 @@
 import { execFileSync } from "child_process";
 import { parseAllDocuments } from "yaml";
 import { K8sResource } from "./types";
+import { isK8sResource } from "./validation";
 
 export function fetchLiveResources(namespace: string): K8sResource[] {
   let output: string;
@@ -25,17 +26,18 @@ export function fetchLiveResources(namespace: string): K8sResource[] {
 
       if (!obj) continue;
 
-      if (Array.isArray((obj as any).items)) {
-        for (const item of (obj as any).items) {
-          if (item?.kind && item?.apiVersion) {
-            resources.push(item as K8sResource);
+      const items = (obj as { items?: unknown }).items;
+      if (Array.isArray(items)) {
+        for (const item of items) {
+          if (isK8sResource(item)) {
+            resources.push(item);
           }
         }
         continue;
       }
 
-      if (obj?.kind && obj?.apiVersion) {
-        resources.push(obj as K8sResource);
+      if (isK8sResource(obj)) {
+        resources.push(obj);
       }
     }
   } catch (err) {
