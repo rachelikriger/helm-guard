@@ -15,7 +15,6 @@ export function renderHelmChart(
       { encoding: "utf-8" }
     );
   } catch (err) {
-    // מוסיף הקשר ברור לשגיאת הפקודה
     throw new Error(
       `Failed to run "helm template" for chart ${chartPath} in namespace ${namespace}: ${fmt(err)}`
     );
