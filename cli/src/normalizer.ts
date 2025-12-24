@@ -8,7 +8,7 @@ const IGNORED_METADATA_FIELDS = [
   "managedFields"
 ];
 
-export function normalize(resource: K8sResource): K8sResource {
+export const normalize = (resource: K8sResource): K8sResource => {
   const clone = structuredClone(resource);
 
   delete clone.status;
@@ -27,9 +27,9 @@ export function normalize(resource: K8sResource): K8sResource {
 
   normalizeArrays(clone);
   return clone;
-}
+};
 
-function normalizeArrays(obj: unknown): void {
+const normalizeArrays = (obj: unknown): void => {
   if (Array.isArray(obj)) {
     if (isSortableByName(obj)) {
       obj.sort((a, b) => String(a.name).localeCompare(String(b.name)));
@@ -38,7 +38,7 @@ function normalizeArrays(obj: unknown): void {
   } else if (typeof obj === "object" && obj !== null) {
     Object.values(obj).forEach(normalizeArrays);
   }
-}
+};
 
 function isSortableByName(arr: unknown[]): arr is Array<{ name: unknown }> {
   return arr.every(isObjectWithName);

@@ -1,13 +1,19 @@
 import { diff, Diff } from "deep-diff";
 import { minimatch } from "minimatch";
-import { ComparisonResult, DiffAction, K8sResource } from "./types";
+import {
+  ComparisonResult,
+  DIFF_ACTION,
+  DiffAction,
+  K8sResource,
+  RESOURCE_STATUS,
+} from "./types";
 import { normalize } from "./normalizer";
 
-export function compareResources(
+export const compareResources = (
   helm: K8sResource[],
   live: K8sResource[],
   strict: boolean
-): ComparisonResult[] {
+): ComparisonResult[] => {
   const results: ComparisonResult[] = [];
 
   const helmMap = mapByKey(helm.map(normalize));
@@ -16,7 +22,11 @@ export function compareResources(
   for (const [key, helmRes] of helmMap) {
     const liveRes = liveMap.get(key);
     if (!liveRes) {
-      results.push({ resourceKey: key, status: "MISSING_LIVE", differences: [] });
+      results.push({
+        resourceKey: key,
+        status: RESOURCE_STATUS.MISSING_LIVE,
+        differences: []
+      });
       continue;
     }
 
@@ -32,28 +42,32 @@ export function compareResources(
           action: classifyDiff(path, strict)
         };
       })
-      .filter(d => d.action !== "IGNORE");
+      .filter(d => d.action !== DIFF_ACTION.IGNORE);
 
     results.push({
       resourceKey: key,
-      status: differences.length ? "DRIFT" : "MATCH",
+      status: differences.length ? RESOURCE_STATUS.DRIFT : RESOURCE_STATUS.MATCH,
       differences
     });
   }
 
   for (const key of liveMap.keys()) {
     if (!helmMap.has(key)) {
-      results.push({ resourceKey: key, status: "MISSING_HELM", differences: [] });
+      results.push({
+        resourceKey: key,
+        status: RESOURCE_STATUS.MISSING_HELM,
+        differences: []
+      });
     }
   }
 
   return results;
-}
+};
 
-function extractDiffValues(diffEntry: Diff<K8sResource, K8sResource>): {
+const extractDiffValues = (diffEntry: Diff<K8sResource, K8sResource>): {
   helmValue?: unknown;
   liveValue?: unknown;
-} {
+} => {
   if (diffEntry.kind === "A") {
     return {
       helmValue: extractArraySide(diffEntry.item, "lhs"),
@@ -65,33 +79,33 @@ function extractDiffValues(diffEntry: Diff<K8sResource, K8sResource>): {
     helmValue: "lhs" in diffEntry ? diffEntry.lhs : undefined,
     liveValue: "rhs" in diffEntry ? diffEntry.rhs : undefined
   };
-}
+};
 
-function extractArraySide(
+const extractArraySide = (
   entry: Diff<K8sResource, K8sResource>,
   side: "lhs" | "rhs"
-): unknown {
+): unknown => {
   if (side === "lhs" && "lhs" in entry) return entry.lhs;
   if (side === "rhs" && "rhs" in entry) return entry.rhs;
   return undefined;
-}
+};
 
-function classifyDiff(path: string, strict: boolean): DiffAction {
-  if (minimatch(path, "metadata.*")) return "IGNORE";
-  if (!strict) return "WARN";
-  return "FAIL";
-}
+const classifyDiff = (path: string, strict: boolean): DiffAction => {
+  if (minimatch(path, "metadata.*")) return DIFF_ACTION.IGNORE;
+  if (!strict) return DIFF_ACTION.WARN;
+  return DIFF_ACTION.FAIL;
+};
 
-function formatDiffPath(path: Array<string | number> | undefined): string {
+const formatDiffPath = (path: Array<string | number> | undefined): string => {
   if (!Array.isArray(path)) return "";
   return path.map(segment => String(segment)).join(".");
-}
+};
 
-function mapByKey(resources: K8sResource[]): Map<string, K8sResource> {
+const mapByKey = (resources: K8sResource[]): Map<string, K8sResource> => {
   return new Map(
     resources.map(r => [
       `${r.kind}/${r.metadata.namespace ?? "default"}/${r.metadata.name}`,
       r
     ])
   );
-}
+};

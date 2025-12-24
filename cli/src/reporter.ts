@@ -1,26 +1,29 @@
 import chalk from "chalk";
-import { ComparisonResult } from "./types";
+import { ComparisonResult, DIFF_ACTION, RESOURCE_STATUS } from "./types";
 
 const FAIL_MARK = chalk.red("x");
 const WARN_MARK = chalk.yellow("~");
 
-export function printReport(results: ComparisonResult[]): number {
+export const printReport = (results: ComparisonResult[]): number => {
   let exitCode = 0;
 
   for (const r of results) {
-    if (r.status === "MATCH") continue;
+    if (r.status === RESOURCE_STATUS.MATCH) continue;
 
-    if (r.status === "MISSING_LIVE" || r.status === "MISSING_HELM") {
+    if (
+      r.status === RESOURCE_STATUS.MISSING_LIVE ||
+      r.status === RESOURCE_STATUS.MISSING_HELM
+    ) {
       exitCode = Math.max(exitCode, 2);
     }
 
     console.log(chalk.bold(r.resourceKey), chalk.yellow(r.status));
 
     for (const d of r.differences) {
-      const marker = d.action === "FAIL" ? FAIL_MARK : WARN_MARK;
+      const marker = d.action === DIFF_ACTION.FAIL ? FAIL_MARK : WARN_MARK;
       console.log(" ", marker, d.path);
-      if (d.action === "FAIL") exitCode = 2;
-      if (d.action === "WARN" && exitCode === 0) exitCode = 1;
+      if (d.action === DIFF_ACTION.FAIL) exitCode = 2;
+      if (d.action === DIFF_ACTION.WARN && exitCode === 0) exitCode = 1;
     }
   }
 
@@ -29,4 +32,4 @@ export function printReport(results: ComparisonResult[]): number {
   }
 
   return exitCode;
-}
+};

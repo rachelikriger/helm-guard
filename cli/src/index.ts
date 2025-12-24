@@ -6,7 +6,7 @@ import {
   runBootstrapComparison,
   runHelmManagedComparison,
 } from "./comparisonStrategies";
-import { Mode } from "./types";
+import { MODE, Mode } from "./types";
 
 const program = new Command();
 
@@ -14,7 +14,7 @@ program
   .name("helm-guard")
   .requiredOption("--chart <path>", "Path to Helm chart")
   .requiredOption("--namespace <ns>", "Target namespace")
-  .option("--mode <mode>", "Comparison mode: bootstrap or helm-managed", "bootstrap")
+  .option("--mode <mode>", "Comparison mode: bootstrap or helm-managed", MODE.BOOTSTRAP)
   .option("--strict", "Strict (steady-state) mode", false)
   .option("--output <file>", "Write JSON report to file");
 
@@ -30,7 +30,7 @@ try {
 
   const mode = validateInputs(opts.chart, opts.namespace, opts.mode);
   const runComparison =
-    mode === "bootstrap" ? runBootstrapComparison : runHelmManagedComparison;
+    mode === MODE.BOOTSTRAP ? runBootstrapComparison : runHelmManagedComparison;
 
   const results = runComparison({
     chart: opts.chart,
@@ -55,11 +55,11 @@ try {
   process.exit(3);
 }
 
-function validateInputs(
+const validateInputs = (
   chart: string,
   namespace: string,
   mode?: Mode | string
-): Mode {
+): Mode => {
   if (!chart || !fs.existsSync(chart)) {
     console.error(`Chart path does not exist: ${chart}`);
     process.exit(3);
@@ -70,11 +70,11 @@ function validateInputs(
     process.exit(3);
   }
 
-  const modeValue = mode ?? "bootstrap";
-  if (modeValue === "bootstrap" || modeValue === "helm-managed") {
+  const modeValue = mode ?? MODE.BOOTSTRAP;
+  if (modeValue === MODE.BOOTSTRAP || modeValue === MODE.HELM_MANAGED) {
     return modeValue;
   }
 
-  console.error('Mode must be either "bootstrap" or "helm-managed"');
+  console.error(`Mode must be either "${MODE.BOOTSTRAP}" or "${MODE.HELM_MANAGED}"`);
   process.exit(3);
-}
+};

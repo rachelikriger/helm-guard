@@ -1,4 +1,4 @@
-import { K8sResource, Mode } from "./types";
+import { K8sResource, MODE, Mode } from "./types";
 import { execWithContext, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
 import { isK8sResource, isRecord } from "./validation";
 
@@ -10,18 +10,18 @@ export interface FetchOptions {
  * Fetch live Kubernetes resources from OpenShift for a given namespace.
  * In helm-managed mode, only resources managed by Helm are returned.
  */
-export function fetchLiveResources(
+export const fetchLiveResources = (
   namespace: string,
   options: FetchOptions = {}
-): K8sResource[] {
-  const mode = options.mode ?? "bootstrap";
+): K8sResource[] => {
+  const mode = options.mode ?? MODE.BOOTSTRAP;
   const yamlOutput = runOcGetAll(namespace, mode);
   const documents = parseYamlDocumentsWithContext(
     yamlOutput,
     "OpenShift YAML output"
   );
   return extractK8sResources(documents);
-}
+};
 
 /* =========================
    Helpers
@@ -30,12 +30,12 @@ export function fetchLiveResources(
 /**
  * Run `oc get all` and return raw YAML output
  */
-function runOcGetAll(
+const runOcGetAll = (
   namespace: string,
   mode: Mode
-): string {
+): string => {
   const args = ["get", "all", "-n", namespace];
-  if (mode === "helm-managed") {
+  if (mode === MODE.HELM_MANAGED) {
     args.push("-l", "app.kubernetes.io/managed-by=Helm");
   }
   args.push("-o", "yaml");
@@ -45,16 +45,15 @@ function runOcGetAll(
     args,
     `run "oc get all" in namespace "${namespace}" (${mode} mode)`
   );
-}
+};
 
 /**
  * Extract valid K8s resources from parsed YAML documents
  */
-function extractK8sResources(documents: unknown[]): K8sResource[] {
+const extractK8sResources = (documents: unknown[]): K8sResource[] => {
   const resources: K8sResource[] = [];
 
   for (const doc of documents) {
-    // Case 1: document has `items` array (List)
     if (hasItemsArray(doc)) {
       for (const item of doc.items) {
         if (isK8sResource(item)) {
@@ -64,14 +63,13 @@ function extractK8sResources(documents: unknown[]): K8sResource[] {
       continue;
     }
 
-    // Case 2: document itself is a single resource
     if (isK8sResource(doc)) {
       resources.push(doc);
     }
   }
 
   return resources;
-}
+};
 
 /**
  * Type guard: object with `items: unknown[]`

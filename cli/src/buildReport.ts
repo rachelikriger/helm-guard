@@ -1,12 +1,14 @@
 import {
   ComparisonResult,
   CountableAction,
+  DIFF_ACTION,
   HelmGuardReport,
+  RESOURCE_STATUS,
   Mode,
   ResourceStatus,
 } from "./types";
 
-export function buildReport(
+export const buildReport = (
   results: ComparisonResult[],
   config: {
     helmChart: string;
@@ -14,15 +16,15 @@ export function buildReport(
     strictMode: boolean;
     mode: Mode;
   }
-): HelmGuardReport {
+): HelmGuardReport => {
   const summary = {
     total: results.length,
-    matched: countByStatus(results, "MATCH"),
-    drifted: countByStatus(results, "DRIFT"),
-    missingLive: countByStatus(results, "MISSING_LIVE"),
-    missingHelm: countByStatus(results, "MISSING_HELM"),
-    warnings: countByAction(results, "WARN"),
-    failures: countByAction(results, "FAIL"),
+    matched: countByStatus(results, RESOURCE_STATUS.MATCH),
+    drifted: countByStatus(results, RESOURCE_STATUS.DRIFT),
+    missingLive: countByStatus(results, RESOURCE_STATUS.MISSING_LIVE),
+    missingHelm: countByStatus(results, RESOURCE_STATUS.MISSING_HELM),
+    warnings: countByAction(results, DIFF_ACTION.WARN),
+    failures: countByAction(results, DIFF_ACTION.FAIL),
   };
 
   return {
@@ -31,19 +33,19 @@ export function buildReport(
     summary,
     results,
   };
-}
+};
 
-function countByStatus(
+const countByStatus = (
   results: ComparisonResult[],
   status: ResourceStatus
-): number {
+): number => {
   return results.filter(r => r.status === status).length;
-}
+};
 
-function countByAction(
+const countByAction = (
   results: ComparisonResult[],
   action: CountableAction
-): number {
-  return results.flatMap(r => r.differences ?? [])
+): number => {
+  return results.flatMap(r => r.differences)
     .filter(d => d.action === action).length;
-}
+};

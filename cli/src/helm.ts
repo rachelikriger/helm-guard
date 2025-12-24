@@ -2,10 +2,10 @@ import { K8sResource } from "./types";
 import { execWithContext, parseYamlDocuments } from "./io";
 import { isK8sResource } from "./validation";
 
-export function renderHelmChart(
+export const renderHelmChart = (
   chartPath: string,
   namespace: string
-): K8sResource[] {
+): K8sResource[] => {
   const output = execWithContext(
     "helm",
     ["template", chartPath, "--namespace", namespace],
@@ -26,4 +26,4 @@ export function renderHelmChart(
   }
 
   return resources;
-}
+};
