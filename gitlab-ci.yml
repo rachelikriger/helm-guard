@@ -7,6 +7,11 @@ variables:
 helm_guard_validate:
   stage: validate
   image: node:20
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "pipeline"'
+      when: on_success
+    - when: manual
+    - when: never
   script:
     - echo "🔧 Installing CLI dependencies"
     - cd cli
