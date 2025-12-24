@@ -1,4 +1,10 @@
-import { ComparisonResult, HelmGuardReport } from "./types";
+import {
+  ComparisonResult,
+  CountableAction,
+  HelmGuardReport,
+  Mode,
+  ResourceStatus,
+} from "./types";
 
 export function buildReport(
   results: ComparisonResult[],
@@ -6,7 +12,7 @@ export function buildReport(
     helmChart: string;
     namespace: string;
     strictMode: boolean;
-    mode?: "bootstrap" | "helm-managed";
+    mode: Mode;
   }
 ): HelmGuardReport {
   const summary = {
@@ -29,14 +35,14 @@ export function buildReport(
 
 function countByStatus(
   results: ComparisonResult[],
-  status: ComparisonResult["status"]
+  status: ResourceStatus
 ): number {
   return results.filter(r => r.status === status).length;
 }
 
 function countByAction(
   results: ComparisonResult[],
-  action: "WARN" | "FAIL"
+  action: CountableAction
 ): number {
   return results.flatMap(r => r.differences ?? [])
     .filter(d => d.action === action).length;

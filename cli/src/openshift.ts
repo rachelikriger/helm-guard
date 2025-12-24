@@ -1,9 +1,9 @@
-import { K8sResource } from "./types";
+import { K8sResource, Mode } from "./types";
 import { execWithContext, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
 import { isK8sResource, isRecord } from "./validation";
 
 export interface FetchOptions {
-  mode?: "bootstrap" | "helm-managed";
+  mode?: Mode;
 }
 
 /**
@@ -32,7 +32,7 @@ export function fetchLiveResources(
  */
 function runOcGetAll(
   namespace: string,
-  mode: "bootstrap" | "helm-managed"
+  mode: Mode
 ): string {
   const args = ["get", "all", "-n", namespace];
   if (mode === "helm-managed") {

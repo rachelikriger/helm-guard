@@ -18,7 +18,7 @@ export interface HelmGuardReport {
     helmChart: string;
     namespace: string;
     strictMode: boolean;
-    mode?: "bootstrap" | "helm-managed";
+    mode: Mode;
   };
   summary: {
     total: number;
@@ -32,8 +32,6 @@ export interface HelmGuardReport {
   results: ComparisonResult[];
 }
 
-export type DiffAction = "IGNORE" | "WARN" | "FAIL";
-
 export interface Difference {
   path: string;
   helmValue?: unknown;
@@ -43,6 +41,15 @@ export interface Difference {
 
 export interface ComparisonResult {
   resourceKey: string;
-  status: "MATCH" | "DRIFT" | "MISSING_LIVE" | "MISSING_HELM";
+  status: ResourceStatus;
   differences: Difference[];
 }
+
+export type Mode = "bootstrap" | "helm-managed";
+export type DiffAction = "IGNORE" | "WARN" | "FAIL";
+export type CountableAction = Extract<DiffAction, "WARN" | "FAIL">;
+export type ResourceStatus =
+  | "MATCH"
+  | "DRIFT"
+  | "MISSING_LIVE"
+  | "MISSING_HELM";

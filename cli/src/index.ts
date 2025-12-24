@@ -6,6 +6,7 @@ import {
   runBootstrapComparison,
   runHelmManagedComparison,
 } from "./comparisonStrategies";
+import { Mode } from "./types";
 
 const program = new Command();
 
@@ -22,7 +23,7 @@ try {
   const opts = program.opts<{
     chart: string;
     namespace: string;
-    mode?: string;
+    mode?: Mode | string;
     strict: boolean;
     output?: string;
   }>();
@@ -57,8 +58,8 @@ try {
 function validateInputs(
   chart: string,
   namespace: string,
-  mode?: string
-): "bootstrap" | "helm-managed" {
+  mode?: Mode | string
+): Mode {
   if (!chart || !fs.existsSync(chart)) {
     console.error(`Chart path does not exist: ${chart}`);
     process.exit(3);
