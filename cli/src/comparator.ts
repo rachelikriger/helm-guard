@@ -1,4 +1,4 @@
-import { diff } from "deep-diff";
+import { diff, Diff } from "deep-diff";
 import { minimatch } from "minimatch";
 import { ComparisonResult, DiffAction, K8sResource } from "./types";
 import { normalize } from "./normalizer";
@@ -20,13 +20,19 @@ export function compareResources(
       continue;
     }
 
-    const diffs = diff(helmRes, liveRes) ?? [];
-    const differences = diffs.map(d => ({
-      path: d.path?.join(".") ?? "",
-      helmValue: (d as any).lhs,
-      liveValue: (d as any).rhs,
-      action: classifyDiff(d.path?.join(".") ?? "", strict)
-    })).filter(d => d.action !== "IGNORE");
+    const diffs = diff<K8sResource, K8sResource>(helmRes, liveRes) ?? [];
+    const differences = diffs
+      .map(d => {
+        const path = formatDiffPath(d.path);
+        const { helmValue, liveValue } = extractDiffValues(d);
+        return {
+          path,
+          helmValue,
+          liveValue,
+          action: classifyDiff(path, strict)
+        };
+      })
+      .filter(d => d.action !== "IGNORE");
 
     results.push({
       resourceKey: key,
@@ -44,10 +50,41 @@ export function compareResources(
   return results;
 }
 
+function extractDiffValues(diffEntry: Diff<K8sResource, K8sResource>): {
+  helmValue?: unknown;
+  liveValue?: unknown;
+} {
+  if (diffEntry.kind === "A") {
+    return {
+      helmValue: extractArraySide(diffEntry.item, "lhs"),
+      liveValue: extractArraySide(diffEntry.item, "rhs")
+    };
+  }
+
+  return {
+    helmValue: "lhs" in diffEntry ? diffEntry.lhs : undefined,
+    liveValue: "rhs" in diffEntry ? diffEntry.rhs : undefined
+  };
+}
+
+function extractArraySide(
+  entry: Diff<K8sResource, K8sResource>,
+  side: "lhs" | "rhs"
+): unknown {
+  if (side === "lhs" && "lhs" in entry) return entry.lhs;
+  if (side === "rhs" && "rhs" in entry) return entry.rhs;
+  return undefined;
+}
+
 function classifyDiff(path: string, strict: boolean): DiffAction {
   if (minimatch(path, "metadata.*")) return "IGNORE";
   if (!strict) return "WARN";
   return "FAIL";
+}
+
+function formatDiffPath(path: Array<string | number> | undefined): string {
+  if (!Array.isArray(path)) return "";
+  return path.map(segment => String(segment)).join(".");
 }
 
 function mapByKey(resources: K8sResource[]): Map<string, K8sResource> {

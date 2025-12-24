@@ -1,7 +1,6 @@
-import { execFileSync } from "child_process";
-import { parseAllDocuments } from "yaml";
 import { K8sResource } from "./types";
-import { isK8sResource } from "./validation";
+import { execWithContext, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
+import { isK8sResource, isRecord } from "./validation";
 
 export interface FetchOptions {
   mode?: "bootstrap" | "helm-managed";
@@ -17,7 +16,10 @@ export function fetchLiveResources(
 ): K8sResource[] {
   const mode = options.mode ?? "bootstrap";
   const yamlOutput = runOcGetAll(namespace, mode);
-  const documents = parseYamlDocuments(yamlOutput);
+  const documents = parseYamlDocumentsWithContext(
+    yamlOutput,
+    "OpenShift YAML output"
+  );
   return extractK8sResources(documents);
 }
 
@@ -38,28 +40,11 @@ function runOcGetAll(
   }
   args.push("-o", "yaml");
 
-  try {
-    return execFileSync("oc", args, { encoding: "utf-8" });
-  } catch (err) {
-    throw new Error(
-      `Failed to run "oc get all" in namespace "${namespace}" (${mode} mode): ${formatError(err)}`
-    );
-  }
-}
-
-/**
- * Parse YAML string into JS objects (documents)
- */
-function parseYamlDocuments(yaml: string): unknown[] {
-  try {
-    return parseAllDocuments(yaml)
-      .map(doc => doc.toJS())
-      .filter(Boolean);
-  } catch (err) {
-    throw new Error(
-      `Failed to parse OpenShift YAML output: ${formatError(err)}`
-    );
-  }
+  return execWithContext(
+    "oc",
+    args,
+    `run "oc get all" in namespace "${namespace}" (${mode} mode)`
+  );
 }
 
 /**
@@ -92,20 +77,8 @@ function extractK8sResources(documents: unknown[]): K8sResource[] {
  * Type guard: object with `items: unknown[]`
  */
 function hasItemsArray(obj: unknown): obj is { items: unknown[] } {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "items" in obj &&
-    Array.isArray((obj as any).items)
-  );
-}
-
-/**
- * Format unknown errors safely
- */
-function formatError(err: unknown): string {
-  if (err instanceof Error) {
-    return err.message;
+  if (!isRecord(obj)) {
+    return false;
   }
-  return String(err);
+  return Array.isArray(obj.items);
 }

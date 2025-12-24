@@ -1,24 +1,4 @@
-import { ComparisonResult } from "./types";
-
-export interface HelmGuardReport {
-  timestamp: string;
-  config: {
-    helmChart: string;
-    namespace: string;
-    strictMode: boolean;
-    mode?: "bootstrap" | "helm-managed";
-  };
-  summary: {
-    total: number;
-    matched: number;
-    drifted: number;
-    missingLive: number;
-    missingHelm: number;
-    warnings: number;
-    failures: number;
-  };
-  results: ComparisonResult[];
-}
+import { ComparisonResult, HelmGuardReport } from "./types";
 
 export function buildReport(
   results: ComparisonResult[],

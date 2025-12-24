@@ -12,6 +12,26 @@ export interface K8sResource {
   [key: string]: unknown;
 }
 
+export interface HelmGuardReport {
+  timestamp: string;
+  config: {
+    helmChart: string;
+    namespace: string;
+    strictMode: boolean;
+    mode?: "bootstrap" | "helm-managed";
+  };
+  summary: {
+    total: number;
+    matched: number;
+    drifted: number;
+    missingLive: number;
+    missingHelm: number;
+    warnings: number;
+    failures: number;
+  };
+  results: ComparisonResult[];
+}
+
 export type DiffAction = "IGNORE" | "WARN" | "FAIL";
 
 export interface Difference {

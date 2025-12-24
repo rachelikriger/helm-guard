@@ -1,10 +1,11 @@
 import { Command } from "commander";
 import fs from "fs";
-import { renderHelmChart } from "./helm";
-import { fetchLiveResources } from "./openshift";
-import { compareResources } from "./comparator";
 import { printReport } from "./reporter";
 import { buildReport } from "./buildReport";
+import {
+  runBootstrapComparison,
+  runHelmManagedComparison,
+} from "./comparisonStrategies";
 
 const program = new Command();
 
@@ -26,18 +27,15 @@ try {
     output?: string;
   }>();
 
-  validateInputs(opts.chart, opts.namespace, opts.mode);
+  const mode = validateInputs(opts.chart, opts.namespace, opts.mode);
+  const runComparison =
+    mode === "bootstrap" ? runBootstrapComparison : runHelmManagedComparison;
 
-  const mode = (opts.mode ?? "bootstrap") as "bootstrap" | "helm-managed";
-
-  const helmResources = renderHelmChart(opts.chart, opts.namespace);
-  const liveResources = fetchLiveResources(opts.namespace, { mode });
-
-  const results = compareResources(
-    helmResources,
-    liveResources,
-    opts.strict
-  );
+  const results = runComparison({
+    chart: opts.chart,
+    namespace: opts.namespace,
+    strict: opts.strict,
+  });
 
   if (opts.output) {
     const report = buildReport(results, {
@@ -60,7 +58,7 @@ function validateInputs(
   chart: string,
   namespace: string,
   mode?: string
-): void {
+): "bootstrap" | "helm-managed" {
   if (!chart || !fs.existsSync(chart)) {
     console.error(`Chart path does not exist: ${chart}`);
     process.exit(3);
@@ -72,8 +70,10 @@ function validateInputs(
   }
 
   const modeValue = mode ?? "bootstrap";
-  if (modeValue !== "bootstrap" && modeValue !== "helm-managed") {
-    console.error('Mode must be either "bootstrap" or "helm-managed"');
-    process.exit(3);
+  if (modeValue === "bootstrap" || modeValue === "helm-managed") {
+    return modeValue;
   }
+
+  console.error('Mode must be either "bootstrap" or "helm-managed"');
+  process.exit(3);
 }
