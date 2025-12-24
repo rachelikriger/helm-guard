@@ -1,6 +1,6 @@
-import { K8sResource, MODE, Mode } from "./types";
+import { K8sResource, MODE, Mode } from "../domain/types";
 import { execWithContext, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
-import { isK8sResource, isRecord } from "./validation";
+import { isK8sResource, isRecord } from "../validation/domain";
 
 export interface FetchOptions {
   mode?: Mode;

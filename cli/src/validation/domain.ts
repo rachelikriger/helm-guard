@@ -1,10 +1,9 @@
-import { K8sResource } from "./types";
+import { K8sResource } from "../domain/types";
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
 
-export function isK8sResource(val: unknown): val is K8sResource {
+export const isK8sResource = (val: unknown): val is K8sResource => {
   if (!isRecord(val)) return false;
   if (typeof val.apiVersion !== "string") return false;
   if (typeof val.kind !== "string") return false;
@@ -14,4 +13,4 @@ export function isK8sResource(val: unknown): val is K8sResource {
   if (typeof meta.name !== "string") return false;
 
   return true;
-}
+};

@@ -1,7 +1,7 @@
-import { compareResources } from "./comparator";
-import { renderHelmChart } from "./helm";
-import { fetchLiveResources } from "./openshift";
-import { ComparisonResult, MODE } from "./types";
+import { compareResources } from "./domain/comparator";
+import { renderHelmChart } from "./boundaries/helm";
+import { fetchLiveResources } from "./boundaries/openshift";
+import { ComparisonResult, MODE } from "./domain/types";
 
 interface ComparisonParams {
   chart: string;

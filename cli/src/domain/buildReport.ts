@@ -4,18 +4,13 @@ import {
   DIFF_ACTION,
   HelmGuardReport,
   RESOURCE_STATUS,
-  Mode,
+  ReportConfig,
   ResourceStatus,
 } from "./types";
 
 export const buildReport = (
   results: ComparisonResult[],
-  config: {
-    helmChart: string;
-    namespace: string;
-    strictMode: boolean;
-    mode: Mode;
-  }
+  config: ReportConfig
 ): HelmGuardReport => {
   const summary = {
     total: results.length,

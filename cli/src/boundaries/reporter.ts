@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { ComparisonResult, DIFF_ACTION, RESOURCE_STATUS } from "./types";
+import { ComparisonResult, DIFF_ACTION, RESOURCE_STATUS } from "../domain/types";
 
 const FAIL_MARK = chalk.red("x");
 const WARN_MARK = chalk.yellow("~");

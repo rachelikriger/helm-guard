@@ -1,6 +1,6 @@
-import { K8sResource } from "./types";
+import { K8sResource } from "../domain/types";
 import { execWithContext, parseYamlDocuments } from "./io";
-import { isK8sResource } from "./validation";
+import { isK8sResource } from "../validation/domain";
 
 export const renderHelmChart = (
   chartPath: string,

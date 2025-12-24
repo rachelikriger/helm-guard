@@ -3,7 +3,8 @@ import { minimatch } from "minimatch";
 import {
   ComparisonResult,
   DIFF_ACTION,
-  DiffAction,
+  DiffAction as ReportDiffAction,
+  DiffActionInternal,
   K8sResource,
   RESOURCE_STATUS,
 } from "./types";
@@ -35,14 +36,15 @@ export const compareResources = (
       .map(d => {
         const path = formatDiffPath(d.path);
         const { helmValue, liveValue } = extractDiffValues(d);
+        const action = classifyDiff(path, strict);
         return {
           path,
           helmValue,
           liveValue,
-          action: classifyDiff(path, strict)
+          action
         };
       })
-      .filter(d => d.action !== DIFF_ACTION.IGNORE);
+      .filter(isReportAction);
 
     results.push({
       resourceKey: key,
@@ -90,11 +92,17 @@ const extractArraySide = (
   return undefined;
 };
 
-const classifyDiff = (path: string, strict: boolean): DiffAction => {
+const classifyDiff = (path: string, strict: boolean): DiffActionInternal => {
   if (minimatch(path, "metadata.*")) return DIFF_ACTION.IGNORE;
   if (!strict) return DIFF_ACTION.WARN;
   return DIFF_ACTION.FAIL;
 };
+
+type ReportableAction = Exclude<DiffActionInternal, typeof DIFF_ACTION.IGNORE>;
+
+const isReportAction = <T extends { action: DiffActionInternal }>(
+  diff: T
+): diff is T & { action: ReportableAction } => diff.action !== DIFF_ACTION.IGNORE;
 
 const formatDiffPath = (path: Array<string | number> | undefined): string => {
   if (!Array.isArray(path)) return "";

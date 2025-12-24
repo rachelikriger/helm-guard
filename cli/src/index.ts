@@ -1,12 +1,11 @@
-import { Command } from "commander";
 import fs from "fs";
-import { printReport } from "./reporter";
-import { buildReport } from "./buildReport";
-import {
-  runBootstrapComparison,
-  runHelmManagedComparison,
-} from "./comparisonStrategies";
-import { MODE, Mode } from "./types";
+import { Command } from "commander";
+import { MODE, Mode } from "./domain/types";
+import { printReport } from "./boundaries/reporter";
+import { buildReport } from "./domain/buildReport";
+import { validateInputs } from "./validation/cli";
+import { runBootstrapComparison, runHelmManagedComparison, } from "./comparisonStrategies";
+
 
 const program = new Command();
 
@@ -54,27 +53,3 @@ try {
   console.error("helm-guard failed:", err instanceof Error ? err.message : err);
   process.exit(3);
 }
-
-const validateInputs = (
-  chart: string,
-  namespace: string,
-  mode?: Mode | string
-): Mode => {
-  if (!chart || !fs.existsSync(chart)) {
-    console.error(`Chart path does not exist: ${chart}`);
-    process.exit(3);
-  }
-
-  if (!namespace || !namespace.trim()) {
-    console.error("Namespace is required and cannot be empty");
-    process.exit(3);
-  }
-
-  const modeValue = mode ?? MODE.BOOTSTRAP;
-  if (modeValue === MODE.BOOTSTRAP || modeValue === MODE.HELM_MANAGED) {
-    return modeValue;
-  }
-
-  console.error(`Mode must be either "${MODE.BOOTSTRAP}" or "${MODE.HELM_MANAGED}"`);
-  process.exit(3);
-};

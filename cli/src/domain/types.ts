@@ -1,3 +1,14 @@
+import type {
+  DiffAction as ReportDiffAction,
+  HelmGuardReport,
+  Mode,
+  ReportConfig,
+  ReportSummary,
+  ResourceDiff,
+  ResourceResult,
+  ResourceStatus,
+} from "../../../shared/report-contract";
+
 /* =========================
    Kubernetes domain types
    ========================= */
@@ -25,8 +36,6 @@ export const MODE = {
   HELM_MANAGED: "helm-managed",
 } as const;
 
-export type Mode = typeof MODE[keyof typeof MODE];
-
 /* =========================
    Diff & comparison domain
    ========================= */
@@ -37,15 +46,14 @@ export const DIFF_ACTION = {
   FAIL: "FAIL",
 } as const;
 
-export type DiffAction =
+export type DiffActionInternal =
   typeof DIFF_ACTION[keyof typeof DIFF_ACTION];
 
 /**
  * Actions that are meaningful for summary counters
  * (IGNORE is intentionally excluded)
  */
-export type CountableAction =
-  Exclude<DiffAction, typeof DIFF_ACTION.IGNORE>;
+export type CountableAction = ReportDiffAction;
 
 export const RESOURCE_STATUS = {
   MATCH: "MATCH",
@@ -54,50 +62,23 @@ export const RESOURCE_STATUS = {
   MISSING_HELM: "MISSING_HELM",
 } as const;
 
-export type ResourceStatus =
-  typeof RESOURCE_STATUS[keyof typeof RESOURCE_STATUS];
-
 /* =========================
    Comparison results
    ========================= */
 
-export interface Difference {
-  path: string;
-  helmValue?: unknown;
-  liveValue?: unknown;
-  action: DiffAction;
-}
+export type Difference = ResourceDiff;
 
-export interface ComparisonResult {
-  resourceKey: string;
-  status: ResourceStatus;
-  differences: Difference[];
-}
+export type ComparisonResult = ResourceResult;
 
 /* =========================
-   Report (CLI → UI contract)
+   Report (shared contract)
    ========================= */
 
-export interface ReportConfig {
-  helmChart: string;
-  namespace: string;
-  strictMode: boolean;
-  mode: Mode;
-}
-
-export interface ReportSummary {
-  total: number;
-  matched: number;
-  drifted: number;
-  missingLive: number;
-  missingHelm: number;
-  warnings: number;
-  failures: number;
-}
-
-export interface HelmGuardReport {
-  timestamp: string;
-  config: ReportConfig;
-  summary: ReportSummary;
-  results: ComparisonResult[];
-}
+export type {
+  HelmGuardReport,
+  ReportConfig,
+  ReportSummary,
+  ResourceStatus,
+  ReportDiffAction as DiffAction,
+  Mode,
+};
