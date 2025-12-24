@@ -1,9 +1,10 @@
 {
-  "timestamp": "2025-12-22T10:15:00Z",
+  "timestamp": "2025-03-08T12:34:56.789Z",
   "config": {
     "helmChart": "./charts/my-app",
-    "namespace": "prod",
-    "strictMode": true
+    "namespace": "default",
+    "strictMode": false,
+    "mode": "bootstrap"
   },
   "summary": {
     "total": 3,
@@ -12,20 +13,30 @@
     "missingLive": 1,
     "missingHelm": 0,
     "warnings": 1,
-    "failures": 1
+    "failures": 0
   },
   "results": [
     {
-      "resourceKey": "Deployment/prod/api",
+      "resourceKey": "Deployment/default/my-app",
+      "status": "MATCH",
+      "differences": []
+    },
+    {
+      "resourceKey": "Service/default/my-app",
       "status": "DRIFT",
       "differences": [
         {
-          "path": "spec.template.spec.containers[0].image",
-          "helmValue": "api:v2",
-          "liveValue": "api:v1",
-          "action": "FAIL"
+          "path": "spec.ports[0].port",
+          "helmValue": 80,
+          "liveValue": 8080,
+          "action": "WARN"
         }
       ]
+    },
+    {
+      "resourceKey": "ConfigMap/default/my-app-config",
+      "status": "MISSING_LIVE",
+      "differences": []
     }
   ]
 }

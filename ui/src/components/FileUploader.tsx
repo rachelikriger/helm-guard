@@ -6,6 +6,15 @@ interface FileUploaderProps {
   onReportLoaded: (report: HelmGuardReport) => void;
 }
 
+function isValidReport(report: unknown): report is HelmGuardReport {
+  return Boolean(
+    report &&
+    typeof report === 'object' &&
+    (report as HelmGuardReport).summary &&
+    Array.isArray((report as HelmGuardReport).results)
+  );
+}
+
 export function FileUploader({ onReportLoaded }: FileUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,10 +33,10 @@ export function FileUploader({ onReportLoaded }: FileUploaderProps) {
       try {
         const content = e.target?.result as string;
         const report = JSON.parse(content) as HelmGuardReport;
-        
+
         // Validate basic structure
-        if (!report.summary || !report.results) {
-          setError('Invalid report format: missing summary or results');
+        if (!isValidReport(report)) {
+          setError('Invalid report format: missing summary or results array');
           return;
         }
         

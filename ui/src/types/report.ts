@@ -11,13 +11,14 @@ export interface ResourceDiff {
 export interface ResourceResult {
   resourceKey: string;
   status: ResourceStatus;
-  differences?: ResourceDiff[];
+  differences: ResourceDiff[];
 }
 
 export interface ReportConfig {
   helmChart: string;
   namespace: string;
   strictMode: boolean;
+  mode?: 'bootstrap' | 'helm-managed';
 }
 
 export interface ReportSummary {

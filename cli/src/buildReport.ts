@@ -6,6 +6,7 @@ export interface HelmGuardReport {
     helmChart: string;
     namespace: string;
     strictMode: boolean;
+    mode?: "bootstrap" | "helm-managed";
   };
   summary: {
     total: number;
@@ -25,6 +26,7 @@ export function buildReport(
     helmChart: string;
     namespace: string;
     strictMode: boolean;
+    mode?: "bootstrap" | "helm-managed";
   }
 ): HelmGuardReport {
   const summary = {

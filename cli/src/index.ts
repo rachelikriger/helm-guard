@@ -12,6 +12,7 @@ program
   .name("helm-guard")
   .requiredOption("--chart <path>", "Path to Helm chart")
   .requiredOption("--namespace <ns>", "Target namespace")
+  .option("--mode <mode>", "Comparison mode: bootstrap or helm-managed", "bootstrap")
   .option("--strict", "Strict (steady-state) mode", false)
   .option("--output <file>", "Write JSON report to file");
 
@@ -20,17 +21,17 @@ try {
   const opts = program.opts<{
     chart: string;
     namespace: string;
+    mode?: string;
     strict: boolean;
     output?: string;
   }>();
 
-  if (!fs.existsSync(opts.chart)) {
-    console.error(`Chart path does not exist: ${opts.chart}`);
-    process.exit(3);
-  }
+  validateInputs(opts.chart, opts.namespace, opts.mode);
+
+  const mode = (opts.mode ?? "bootstrap") as "bootstrap" | "helm-managed";
 
   const helmResources = renderHelmChart(opts.chart, opts.namespace);
-  const liveResources = fetchLiveResources(opts.namespace);
+  const liveResources = fetchLiveResources(opts.namespace, { mode });
 
   const results = compareResources(
     helmResources,
@@ -43,6 +44,7 @@ try {
       helmChart: opts.chart,
       namespace: opts.namespace,
       strictMode: opts.strict,
+      mode,
     });
     fs.writeFileSync(opts.output, JSON.stringify(report, null, 2));
   }
@@ -52,4 +54,26 @@ try {
 } catch (err) {
   console.error("helm-guard failed:", err instanceof Error ? err.message : err);
   process.exit(3);
+}
+
+function validateInputs(
+  chart: string,
+  namespace: string,
+  mode?: string
+): void {
+  if (!chart || !fs.existsSync(chart)) {
+    console.error(`Chart path does not exist: ${chart}`);
+    process.exit(3);
+  }
+
+  if (!namespace || !namespace.trim()) {
+    console.error("Namespace is required and cannot be empty");
+    process.exit(3);
+  }
+
+  const modeValue = mode ?? "bootstrap";
+  if (modeValue !== "bootstrap" && modeValue !== "helm-managed") {
+    console.error('Mode must be either "bootstrap" or "helm-managed"');
+    process.exit(3);
+  }
 }

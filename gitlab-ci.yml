@@ -1,0 +1,41 @@
+stages:
+  - validate
+
+variables:
+  HELM_GUARD_UI_URL: "https://helm-guard-ui.my-company.com"
+
+helm_guard_validate:
+  stage: validate
+  image: node:20
+  script:
+    - echo "🔧 Installing CLI dependencies"
+    - cd cli
+    - npm ci
+    - npm run build
+
+    - echo "🛡️ Running helm-guard"
+    - node dist/index.js \
+        --chart "$HELM_CHART_PATH" \
+        --namespace "$HELM_NAMESPACE" \
+        --mode "$HELM_GUARD_MODE" \
+        --output ../report.json
+
+
+  artifacts:
+    when: always
+    paths:
+      - report.json
+    expire_in: 7 days
+
+  after_script:
+    - |
+      REPORT_URL="${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/report.json"
+
+      echo ""
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "🛡️  HELM-GUARD REPORT READY"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      echo "🔗 View report in UI:"
+      echo "${HELM_GUARD_UI_URL}/?reportUrl=${REPORT_URL}"
+      echo ""
