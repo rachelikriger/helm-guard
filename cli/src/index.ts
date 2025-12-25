@@ -4,8 +4,7 @@ import { MODE, Mode } from "./domain/types";
 import { printReport } from "./boundaries/reporter";
 import { buildReport } from "./domain/buildReport";
 import { validateInputs } from "./validation/cli";
-import { runBootstrapComparison, runHelmManagedComparison, } from "./comparisonStrategies";
-
+import { runBootstrapComparison, runHelmManagedComparison } from "./comparisonStrategies";
 
 const program = new Command();
 
@@ -16,6 +15,13 @@ program
   .option("--mode <mode>", "Comparison mode: bootstrap or helm-managed", MODE.BOOTSTRAP)
   .option("--strict", "Strict (steady-state) mode", false)
   .option("--output <file>", "Write JSON report to file");
+
+const formatErrorMessage = (message: string): string => {
+  if (message.startsWith("Invalid CLI input:")) {
+    return `helm-guard input error: ${message}`;
+  }
+  return `helm-guard failed: ${message}`;
+};
 
 try {
   program.parse();
@@ -50,6 +56,8 @@ try {
   const exitCode = printReport(results);
   process.exit(exitCode);
 } catch (err) {
-  console.error("helm-guard failed:", err instanceof Error ? err.message : err);
+  const message = err instanceof Error ? err.message : String(err);
+  const output = formatErrorMessage(message);
+  console.error(output);
   process.exit(3);
 }

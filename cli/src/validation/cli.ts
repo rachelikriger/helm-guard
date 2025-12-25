@@ -1,13 +1,17 @@
 import fs from "fs";
 import { MODE, Mode } from "../domain/types";
 
-export const validateInputs = (chart: string, namespace: string, mode?: Mode | string): Mode => {
+export const validateInputs = (
+  chart: string,
+  namespace: string,
+  mode?: Mode | string
+): Mode => {
   if (!chart || !fs.existsSync(chart)) {
-    throw new Error(`Chart path does not exist: ${chart}`);
+    throw new Error(`Invalid CLI input: Chart path does not exist: ${chart}`);
   }
 
   if (!namespace || !namespace.trim()) {
-    throw new Error("Namespace is required and cannot be empty");
+    throw new Error("Invalid CLI input: Namespace is required and cannot be empty");
   }
 
   const modeValue = mode ?? MODE.BOOTSTRAP;
@@ -17,6 +21,6 @@ export const validateInputs = (chart: string, namespace: string, mode?: Mode | s
   }
 
   throw new Error(
-    `Mode must be either "${MODE.BOOTSTRAP}" or "${MODE.HELM_MANAGED}"`
+    `Invalid CLI input: Mode must be either "${MODE.BOOTSTRAP}" or "${MODE.HELM_MANAGED}"`
   );
 };

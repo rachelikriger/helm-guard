@@ -1,9 +1,10 @@
+````md
 # 🛡️ helm-guard
 
 **helm-guard** is a lightweight guardrail tool that validates Helm manifests
 against live OpenShift resources **before deployment**.
 
-It is designed to help teams adopt Helm safely, detect configuration drift,
+It helps teams adopt Helm safely, detect configuration drift,
 and gain confidence before performing a real `helm upgrade`.
 
 ---
@@ -24,7 +25,7 @@ There is **no backend**, **no database**, and **no deployment logic**.
 * ✔️ Validation only (no deployment)
 * ✔️ Safe to run in CI pipelines
 * ✔️ Works in offline / restricted environments
-* ✔️ Designed for first-time Helm adoption **and** steady-state Helm usage
+* ✔️ Designed for first-time Helm adoption
 * ✔️ Follows SOLID and clean architecture principles
 
 ---
@@ -36,11 +37,9 @@ There is **no backend**, **no database**, and **no deployment logic**.
 * Normalizes system-generated and noisy fields
 * Performs **semantic comparison** (not raw YAML diff)
 * Classifies differences as:
-
   * `WARN` – non-breaking drift
   * `FAIL` – breaking or unsafe drift
 * Produces:
-
   * Human-readable console output
   * Optional structured JSON report (for CI artifacts & UI)
 
@@ -60,38 +59,38 @@ helm-guard is a **guardrail**, not a deployment system.
 
 ## Comparison Modes
 
-helm-guard supports two comparison modes.
-
 ### 1️⃣ Bootstrap mode (default)
 
 Use when Helm is introduced for the first time.
 
-* Compares Helm-rendered manifests against **all live resources** in the namespace
+* Compares Helm-rendered manifests against **all workload resources** in the namespace
 * Missing resources are expected and typically classified as warnings
 * Suitable for discovering gaps during initial Helm adoption
 
 ```bash
 --mode bootstrap
-```
+````
+
+> ⚠️ **Coverage note**
+> `oc get all` does not include CRDs, Secrets, ConfigMaps, or cluster-scoped resources.
+> helm-guard focuses on workload-level resources (Deployments, Services, Jobs, etc.).
 
 ---
 
-### 2️⃣ Helm-managed mode
+### 2️⃣ Helm-managed mode (not yet supported)
 
-Use when services are already managed by Helm.
+This mode is **intentionally disabled** in the current release.
 
-* Fetches **only Helm-managed resources** from OpenShift
-* Filters live resources by label:
+It is reserved for future steady-state Helm validation
+(e.g. label-filtered comparisons or `helm diff` integration).
 
-  ```
-  app.kubernetes.io/managed-by=Helm
-  ```
-* Missing or unexpected resources are treated as failures
-* Suitable for steady-state environments
+Attempting to run:
 
 ```bash
 --mode helm-managed
 ```
+
+will result in a clear validation error.
 
 ---
 
@@ -111,7 +110,6 @@ npm run build
 node dist/index.js \
   --chart ./path/to/chart \
   --namespace my-namespace \
-  --mode helm-managed \
   --strict \
   --output ./report.json
 ```
@@ -127,20 +125,22 @@ When `--output` is provided, a structured JSON report is also written to disk.
 | ------------- | -------------------------------------------- |
 | `--chart`     | Path to Helm chart directory                 |
 | `--namespace` | OpenShift namespace                          |
-| `--mode`      | `bootstrap` (default) or `helm-managed`      |
+| `--mode`      | `bootstrap` (default)                        |
 | `--strict`    | Classify differences as FAIL instead of WARN |
 | `--output`    | Write JSON report to file                    |
 
 ---
 
-### Exit Codes
+### Exit Codes (CI-Friendly)
 
-| Code | Meaning                       |
-| ---- | ----------------------------- |
-| 0    | No differences                |
-| 1    | Warnings only                 |
-| 2    | Failures or missing resources |
-| 3    | Runtime or usage error        |
+| Code | Meaning                                |
+| ---- | -------------------------------------- |
+| 0    | No differences                         |
+| 1    | Warnings only                          |
+| 2    | Failures or missing resources detected |
+| 3    | Runtime or usage error                 |
+
+These exit codes are designed for CI gating.
 
 ---
 
@@ -207,26 +207,18 @@ See `sample-report.json` for a complete example.
 Typical CI flow:
 
 1. Run `helm-guard` in a pipeline job
+
 2. Write `report.json` as a job artifact
+
 3. Publish a link to the UI with:
 
    ```
    ?reportUrl=<artifact URL>
    ```
+
 4. Developers review the report visually
 
 helm-guard is safe to run as a **pre-deployment gate**.
-
----
-
-## Development Notes
-
-* No backend server
-* No database
-* No network calls beyond `helm` and `oc`
-* Designed for air-gapped / restricted environments
-* Clear separation of concerns
-* SOLID-oriented architecture
 
 ---
 
@@ -249,3 +241,5 @@ helm-guard is intentionally minimal.
 If it fails, it fails loudly.
 If it warns, it warns clearly.
 If it passes, you can deploy with confidence.
+
+```

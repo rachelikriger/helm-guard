@@ -1,21 +1,24 @@
-import { K8sResource, MODE, Mode } from "../domain/types";
+import { K8sResource } from "../domain/types";
 import { execWithContext, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
 import { isK8sResource, isRecord } from "../validation/domain";
 
 export interface FetchOptions {
-  mode?: Mode;
+  labelSelector?: string;
+  contextLabel?: string;
 }
 
 /**
  * Fetch live Kubernetes resources from OpenShift for a given namespace.
- * In helm-managed mode, only resources managed by Helm are returned.
  */
 export const fetchLiveResources = (
   namespace: string,
   options: FetchOptions = {}
 ): K8sResource[] => {
-  const mode = options.mode ?? MODE.BOOTSTRAP;
-  const yamlOutput = runOcGetAll(namespace, mode);
+  const yamlOutput = runOcGetAll(
+    namespace,
+    options.labelSelector,
+    options.contextLabel
+  );
   const documents = parseYamlDocumentsWithContext(
     yamlOutput,
     "OpenShift YAML output"
@@ -32,18 +35,21 @@ export const fetchLiveResources = (
  */
 const runOcGetAll = (
   namespace: string,
-  mode: Mode
+  labelSelector?: string,
+  contextLabel?: string
 ): string => {
   const args = ["get", "all", "-n", namespace];
-  if (mode === MODE.HELM_MANAGED) {
-    args.push("-l", "app.kubernetes.io/managed-by=Helm");
+  if (labelSelector) {
+    args.push("-l", labelSelector);
   }
   args.push("-o", "yaml");
+
+  const contextSuffix = contextLabel ? ` (${contextLabel} mode)` : "";
 
   return execWithContext(
     "oc",
     args,
-    `run "oc get all" in namespace "${namespace}" (${mode} mode)`
+    `run "oc get all" in namespace "${namespace}"${contextSuffix}`
   );
 };
 

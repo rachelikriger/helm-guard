@@ -16,7 +16,9 @@ export const runBootstrapComparison = (
   params: ComparisonParams
 ): ComparisonResult[] => {
   const helmResources = renderHelmChart(params.chart, params.namespace);
-  const liveResources = fetchLiveResources(params.namespace);
+  const liveResources = fetchLiveResources(params.namespace, {
+    contextLabel: MODE.BOOTSTRAP,
+  });
   return compareResources(helmResources, liveResources, params.strict);
 };
 
