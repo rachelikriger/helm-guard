@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FileJson, Upload } from 'lucide-react';
 import { ReportSummary } from './ReportSummary';
 import { Filters } from './Filters';
@@ -14,6 +14,17 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<ResourceStatus[]>([]);
   const [selectedActions, setSelectedActions] = useState<DiffAction[]>([]);
+
+  const includedKinds = useMemo(() => {
+    const kinds = new Set<string>();
+    for (const result of report.results) {
+      const kind = result.resourceKey.split('/')[0]?.trim();
+      if (kind) {
+        kinds.add(kind);
+      }
+    }
+    return Array.from(kinds).sort();
+  }, [report.results]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,6 +70,7 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
             helmChart={report.config?.helmChart}
             namespace={report.config?.namespace}
             timestamp={report.timestamp}
+            includedKinds={includedKinds}
           />
         </section>
 

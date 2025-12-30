@@ -21,7 +21,8 @@ function parseResourceKey(resourceKey: string): { kind: string; namespace: strin
 
 export function ResourceCard({ resource, index }: ResourceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const hasDiffs = resource.differences && resource.differences.length > 0;
+  const diffCount = resource.differences?.length ?? 0;
+  const hasDiffs = diffCount > 0;
   
   const { kind, namespace, name } = useMemo(
     () => parseResourceKey(resource.resourceKey),
@@ -35,12 +36,12 @@ export function ResourceCard({ resource, index }: ResourceCardProps) {
     >
       <button
         onClick={() => setIsExpanded(!isExpanded)}
+        aria-expanded={isExpanded}
         className={`
           w-full flex items-center justify-between p-4 text-left
           hover:bg-muted/30 transition-colors
-          ${hasDiffs ? 'cursor-pointer' : 'cursor-default'}
+          cursor-pointer
         `}
-        disabled={!hasDiffs}
       >
         <div className="flex items-center gap-4 min-w-0">
           <StatusBadge status={resource.status} />
@@ -57,23 +58,29 @@ export function ResourceCard({ resource, index }: ResourceCardProps) {
           </div>
         </div>
         
-        {hasDiffs && (
-          <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-            <span className="text-xs text-muted-foreground">
-              {resource.differences!.length} diff{resource.differences!.length !== 1 ? 's' : ''}
-            </span>
-            <ChevronDown 
-              className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
-                isExpanded ? 'rotate-180' : ''
-              }`}
-            />
-          </div>
-        )}
+        <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+          <span className="text-xs text-muted-foreground">
+            {hasDiffs ? `${diffCount} diff${diffCount !== 1 ? 's' : ''}` : 'No diffs'}
+          </span>
+          <ChevronDown 
+            className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
+              isExpanded ? 'rotate-180' : ''
+            }`}
+          />
+        </div>
       </button>
 
-      {isExpanded && hasDiffs && (
+      {isExpanded && (
         <div className="border-t border-border bg-muted/20 p-4">
-          <DiffTable diffs={resource.differences!} />
+          {hasDiffs ? (
+            <DiffTable diffs={resource.differences!} />
+          ) : (
+            <p className="text-sm text-muted-foreground italic py-2">
+              {resource.status === 'MATCH'
+                ? 'No differences after normalization.'
+                : 'No differences recorded for this resource.'}
+            </p>
+          )}
         </div>
       )}
     </div>

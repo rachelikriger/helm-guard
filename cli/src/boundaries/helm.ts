@@ -1,14 +1,29 @@
-import { K8sResource } from "../domain/types";
+import { HelmRenderOptions, K8sResource } from "../domain/types";
 import { execWithContext, parseYamlDocuments } from "./io";
 import { isK8sResource } from "../validation/domain";
 
 export const renderHelmChart = (
   chartPath: string,
-  namespace: string
+  namespace: string,
+  options: HelmRenderOptions
 ): K8sResource[] => {
+  const args = ["template"];
+
+  if (options.releaseName) {
+    args.push(options.releaseName);
+  }
+
+  args.push(chartPath, "--namespace", namespace);
+
+  if (options.valuesFiles) {
+    for (const valuesFile of options.valuesFiles) {
+      args.push("-f", valuesFile);
+    }
+  }
+
   const output = execWithContext(
     "helm",
-    ["template", chartPath, "--namespace", namespace],
+    args,
     `run "helm template" for chart ${chartPath} in namespace ${namespace}`
   );
 

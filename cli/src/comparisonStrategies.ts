@@ -1,12 +1,13 @@
 import { compareResources } from "./domain/comparator";
 import { renderHelmChart } from "./boundaries/helm";
 import { fetchLiveResources } from "./boundaries/openshift";
-import { ComparisonResult, MODE } from "./domain/types";
+import { ComparisonResult, HelmRenderOptions, MODE } from "./domain/types";
 
 interface ComparisonParams {
   chart: string;
   namespace: string;
   strict: boolean;
+  helmRenderOptions: HelmRenderOptions;
 }
 
 /**
@@ -15,7 +16,11 @@ interface ComparisonParams {
 export const runBootstrapComparison = (
   params: ComparisonParams
 ): ComparisonResult[] => {
-  const helmResources = renderHelmChart(params.chart, params.namespace);
+  const helmResources = renderHelmChart(
+    params.chart,
+    params.namespace,
+    params.helmRenderOptions
+  );
   const liveResources = fetchLiveResources(params.namespace, {
     contextLabel: MODE.BOOTSTRAP,
   });

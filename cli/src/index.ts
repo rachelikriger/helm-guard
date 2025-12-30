@@ -1,9 +1,10 @@
 import fs from "fs";
 import { Command } from "commander";
 import { MODE, Mode } from "./domain/types";
+import type { ReportConfig } from "./domain/types";
 import { printReport } from "./boundaries/reporter";
 import { buildReport } from "./domain/buildReport";
-import { validateInputs } from "./validation/cli";
+import { validateHelmRenderOptions, validateInputs } from "./validation/cli";
 import { runBootstrapComparison, runHelmManagedComparison } from "./comparisonStrategies";
 
 const program = new Command();
@@ -14,6 +15,13 @@ program
   .requiredOption("--namespace <ns>", "Target namespace")
   .option("--mode <mode>", "Comparison mode: bootstrap or helm-managed", MODE.BOOTSTRAP)
   .option("--strict", "Strict (steady-state) mode", false)
+  .option("--release <name>", "Helm release name")
+  .option(
+    "--values <file>",
+    "Helm values file (repeatable)",
+    (value: string, previous: string[]) => [...previous, value],
+    []
+  )
   .option("--output <file>", "Write JSON report to file");
 
 const formatErrorMessage = (message: string): string => {
@@ -30,10 +38,13 @@ try {
     namespace: string;
     mode?: Mode | string;
     strict: boolean;
+    release?: string;
+    values: string[];
     output?: string;
   }>();
 
   const mode = validateInputs(opts.chart, opts.namespace, opts.mode);
+  const helmRenderOptions = validateHelmRenderOptions(opts.release, opts.values);
   const runComparison =
     mode === MODE.BOOTSTRAP ? runBootstrapComparison : runHelmManagedComparison;
 
@@ -41,14 +52,27 @@ try {
     chart: opts.chart,
     namespace: opts.namespace,
     strict: opts.strict,
+    helmRenderOptions,
   });
 
   if (opts.output) {
-    const report = buildReport(results, {
+    const reportConfig: ReportConfig = {
       helmChart: opts.chart,
       namespace: opts.namespace,
       strictMode: opts.strict,
       mode,
+    };
+
+    if (helmRenderOptions.releaseName) {
+      reportConfig.releaseName = helmRenderOptions.releaseName;
+    }
+
+    if (helmRenderOptions.valuesFiles && helmRenderOptions.valuesFiles.length > 0) {
+      reportConfig.valuesFiles = helmRenderOptions.valuesFiles;
+    }
+
+    const report = buildReport(results, {
+      ...reportConfig,
     });
     fs.writeFileSync(opts.output, JSON.stringify(report, null, 2));
   }

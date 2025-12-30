@@ -110,12 +110,17 @@ npm run build
 node dist/index.js \
   --chart ./path/to/chart \
   --namespace my-namespace \
+  --release my-release \
+  --values values.yaml \
+  --values values.prod.yaml \
   --strict \
   --output ./report.json
 ```
 
 The CLI always prints a readable summary to the console.
 When `--output` is provided, a structured JSON report is also written to disk.
+helm-guard assumes an active OpenShift context (`oc login` / `KUBECONFIG`).
+Authentication is intentionally handled outside the tool.
 
 ---
 
@@ -127,7 +132,23 @@ When `--output` is provided, a structured JSON report is also written to disk.
 | `--namespace` | OpenShift namespace                          |
 | `--mode`      | `bootstrap` (default)                        |
 | `--strict`    | Classify differences as FAIL instead of WARN |
+| `--release`   | Helm release name (optional)                 |
+| `--values`    | Helm values file (repeatable, order matters) |
 | `--output`    | Write JSON report to file                    |
+
+---
+
+## Helm Rendering Parity
+
+helm-guard renders manifests using the same inputs as a production Helm pipeline:
+
+```
+helm template [RELEASE] [CHART] -f values... --namespace ...
+```
+
+Release name and values files are critical for accurate output. Missing or mismatched
+inputs often cause false-positive diffs because the rendered manifests do not match
+what would be deployed. helm-guard is only as accurate as the Helm context you pass in.
 
 ---
 
@@ -198,6 +219,9 @@ This JSON structure is a **stable public contract** shared between the CLI and U
 * The UI **consumes** the report
 * No runtime coupling exists between them
 
+The config section may include `releaseName` and `valuesFiles` when provided.
+These fields are optional and omitted when not set.
+
 See `sample-report.json` for a complete example.
 
 ---
@@ -206,7 +230,7 @@ See `sample-report.json` for a complete example.
 
 Typical CI flow:
 
-1. Run `helm-guard` in a pipeline job
+1. Run `helm-guard` in a pipeline job with the same Helm parameters used for deployment
 
 2. Write `report.json` as a job artifact
 
@@ -219,6 +243,15 @@ Typical CI flow:
 4. Developers review the report visually
 
 helm-guard is safe to run as a **pre-deployment gate**.
+Exit codes are CI-friendly: 0 (clean), 1 (warnings), 2 (failures), 3 (error).
+
+---
+
+## Common Pitfalls / Important Notes
+
+* Missing `-f` files leads to misleading diffs
+* helm-guard does not infer environment or release context automatically
+* You are responsible for passing the correct Helm inputs for parity
 
 ---
 
@@ -227,6 +260,7 @@ helm-guard is safe to run as a **pre-deployment gate**.
 ```
 helm-guard/
 ├── cli/                # CLI comparison logic
+├── shared/             # Shared report contract
 ├── ui/                 # Read-only report viewer
 ├── sample-report.json  # Example report
 └── README.md

@@ -28,6 +28,15 @@ export interface K8sResource {
 }
 
 /* =========================
+   Helm rendering options
+   ========================= */
+
+export interface HelmRenderOptions {
+  releaseName?: string;
+  valuesFiles?: string[];
+}
+
+/* =========================
    Execution modes
    ========================= */
 

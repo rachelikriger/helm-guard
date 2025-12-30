@@ -5,6 +5,7 @@ interface SummaryCardProps {
   value: number;
   icon: ReactNode;
   variant?: 'default' | 'match' | 'drift' | 'missing-live' | 'missing-helm' | 'warn' | 'fail';
+  description?: string;
 }
 
 const variantStyles = {
@@ -17,17 +18,30 @@ const variantStyles = {
   fail: 'bg-action-fail text-action-fail',
 };
 
-export function SummaryCard({ label, value, icon, variant = 'default' }: SummaryCardProps) {
+export function SummaryCard({
+  label,
+  value,
+  icon,
+  variant = 'default',
+  description,
+}: SummaryCardProps) {
   const styles = variantStyles[variant];
   
   return (
-    <div className="bg-card border border-border rounded-xl p-4 hover:border-border/80 transition-colors">
-      <div className="flex items-start justify-between">
-        <div>
+    <div className="bg-card border border-border rounded-xl p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
             {label}
           </p>
-          <p className="text-2xl font-semibold text-foreground font-mono">
+          <div className="min-h-[28px]">
+            {description && (
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                {description}
+              </p>
+            )}
+          </div>
+          <p className="mt-2 text-2xl font-semibold text-foreground font-mono">
             {value}
           </p>
         </div>

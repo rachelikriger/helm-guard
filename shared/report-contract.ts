@@ -26,6 +26,8 @@ export interface ReportConfig {
   namespace: string;
   strictMode: boolean;
   mode: Mode;
+  releaseName?: string;
+  valuesFiles?: string[];
 }
 
 export interface ReportSummary {

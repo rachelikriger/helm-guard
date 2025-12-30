@@ -46,10 +46,15 @@ export function ResourceList({
   if (filteredResults.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           {results.length === 0 
             ? 'No resources in report' 
             : 'No resources match the current filters'}
+        </p>
+        <p className="text-xs text-muted-foreground mt-2">
+          {results.length === 0
+            ? 'Helm render or live OpenShift query returned no resources.'
+            : 'Adjust filters to review the full report scope.'}
         </p>
       </div>
     );
@@ -59,6 +64,10 @@ export function ResourceList({
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
         Showing {filteredResults.length} of {results.length} resources
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Resources are derived from Helm template output and live OpenShift resources.
+        Filtering affects display only.
       </p>
       <div className="space-y-2">
         {filteredResults.map((result, index) => (
