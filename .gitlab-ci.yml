@@ -1,0 +1,60 @@
+stages:
+  - validate
+
+variables:
+  HELM_GUARD_UI_URL: "https://helm-guard-ui.my-company.com"
+
+helm_guard_validate:
+  stage: validate
+  image: node:20
+
+  script:
+    - echo "🧩 Installing helm-guard CLI dependencies"
+    - cd cli
+    - npm ci
+    - npm run build
+
+    - echo "🛠️ Running helm-guard validation"
+    - |
+      ARGS="--chart \"$HELM_CHART_PATH\" --namespace \"$HELM_NAMESPACE\" --output ../report.json"
+
+      if [ -n "$HELM_GUARD_MODE" ]; then
+        ARGS="$ARGS --mode \"$HELM_GUARD_MODE\""
+      fi
+
+      if [ -n "$HELM_RELEASE_NAME" ]; then
+        ARGS="$ARGS --release \"$HELM_RELEASE_NAME\""
+      fi
+
+      if [ -n "$HELM_VALUES_FILES" ]; then
+        for values_file in $HELM_VALUES_FILES; do
+          ARGS="$ARGS --values \"$values_file\""
+        done
+      fi
+
+      echo "🔍 Comparing Helm desired state vs live OpenShift resources"
+      eval node dist/index.js $ARGS
+
+  artifacts:
+    when: always
+    paths:
+      - report.json
+    expire_in: 7 days
+
+  after_script:
+    - |
+      REPORT_URL="${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/report.json"
+
+      echo ""
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "🛡️  HELM-GUARD REPORT READY"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      echo "📊 Validation report:"
+      echo "👉 ${HELM_GUARD_UI_URL}/?reportUrl=${REPORT_URL}"
+      echo ""
+      echo "ℹ️  Tip:"
+      echo "   ✅ No output issues → safe to deploy"
+      echo "   ⚠️  WARN only → review recommended"
+      echo "   ❌ FAIL → deployment should be blocked"
+      echo ""

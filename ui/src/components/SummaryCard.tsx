@@ -6,6 +6,8 @@ interface SummaryCardProps {
   icon: ReactNode;
   variant?: 'default' | 'match' | 'drift' | 'missing-live' | 'missing-helm' | 'warn' | 'fail';
   description?: string;
+  className?: string;
+  iconClassName?: string;
 }
 
 const variantStyles = {
@@ -24,11 +26,13 @@ export function SummaryCard({
   icon,
   variant = 'default',
   description,
+  className,
+  iconClassName,
 }: SummaryCardProps) {
   const styles = variantStyles[variant];
   
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
+    <div className={`bg-card border border-border rounded-xl p-4 ${className ?? ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
@@ -45,7 +49,7 @@ export function SummaryCard({
             {value}
           </p>
         </div>
-        <div className={`p-2 rounded-lg ${styles}`}>
+        <div className={`p-2 rounded-lg ${styles} ${iconClassName ?? ''}`}>
           {icon}
         </div>
       </div>

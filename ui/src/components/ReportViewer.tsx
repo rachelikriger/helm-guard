@@ -26,6 +26,18 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
     return Array.from(kinds).sort();
   }, [report.results]);
 
+  const includedResourceNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const result of report.results) {
+      const parts = result.resourceKey.split('/');
+      const name = parts.length >= 2 ? parts[parts.length - 1]?.trim() : '';
+      if (name) {
+        names.add(name);
+      }
+    }
+    return Array.from(names);
+  }, [report.results]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -71,6 +83,7 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
             namespace={report.config?.namespace}
             timestamp={report.timestamp}
             includedKinds={includedKinds}
+            includedResourceNames={includedResourceNames}
           />
         </section>
 
