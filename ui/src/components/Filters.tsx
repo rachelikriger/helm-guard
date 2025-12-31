@@ -1,4 +1,5 @@
 import { Search, X } from 'lucide-react';
+import { Switch } from './ui/switch';
 import type { ResourceStatus, DiffAction } from '@/types/report';
 
 interface FiltersProps {
@@ -8,6 +9,8 @@ interface FiltersProps {
   onStatusChange: (statuses: ResourceStatus[]) => void;
   selectedActions: DiffAction[];
   onActionChange: (actions: DiffAction[]) => void;
+  includeClusterScoped: boolean;
+  onIncludeClusterScopedChange: (value: boolean) => void;
 }
 
 const allStatuses: ResourceStatus[] = ['MATCH', 'DRIFT', 'MISSING_LIVE', 'MISSING_HELM'];
@@ -39,6 +42,8 @@ export function Filters({
   onStatusChange,
   selectedActions,
   onActionChange,
+  includeClusterScoped,
+  onIncludeClusterScopedChange,
 }: FiltersProps) {
   const toggleStatus = (status: ResourceStatus) => {
     if (selectedStatuses.includes(status)) {
@@ -130,6 +135,17 @@ export function Filters({
               </button>
             );
           })}
+        </div>
+
+        <div className="flex items-center gap-2 ml-4">
+          <Switch
+            checked={includeClusterScoped}
+            onCheckedChange={onIncludeClusterScopedChange}
+            aria-label="Include cluster-scoped resources"
+          />
+          <span className="text-xs text-muted-foreground">
+            Include cluster-scoped resources
+          </span>
         </div>
 
         {hasActiveFilters && (

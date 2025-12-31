@@ -4,6 +4,7 @@ import type { ResourceStatus } from '@/types/report';
 
 interface StatusBadgeProps {
   status: ResourceStatus;
+  scopeNote?: string;
 }
 
 const statusConfig: Record<ResourceStatus, { label: string; className: string; icon: typeof CheckCircle2; help: string }> = {
@@ -33,9 +34,12 @@ const statusConfig: Record<ResourceStatus, { label: string; className: string; i
   },
 };
 
-export function StatusBadge({ status }: StatusBadgeProps) {
+export function StatusBadge({ status, scopeNote }: StatusBadgeProps) {
   const config = statusConfig[status];
   const Icon = config.icon;
+  const tooltipText = scopeNote
+    ? `${config.help} ${scopeNote}`
+    : config.help;
   
   return (
     <Tooltip>
@@ -45,7 +49,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
           {config.label}
         </span>
       </TooltipTrigger>
-      <TooltipContent>{config.help}</TooltipContent>
+      <TooltipContent>{tooltipText}</TooltipContent>
     </Tooltip>
   );
 }

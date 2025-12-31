@@ -10,30 +10,44 @@ helm_guard_validate:
 
   script:
     - echo "🧩 Installing helm-guard CLI dependencies"
+    - ROOT_DIR="${CI_PROJECT_DIR:-$PWD}"
     - cd cli
     - npm ci
     - npm run build
 
-    - echo "🛠️ Running helm-guard validation"
+    - echo "🛡️ Running helm-guard validation"
     - |
-      ARGS="--chart \"$HELM_CHART_PATH\" --namespace \"$HELM_NAMESPACE\" --output ../report.json"
+      resolve_path() {
+        case "$1" in
+          /*) printf '%s\n' "$1" ;;
+          *)  printf '%s\n' "$ROOT_DIR/$1" ;;
+        esac
+      }
+
+      CHART_PATH="$(resolve_path "$HELM_CHART_PATH")"
+
+      set -- \
+        --chart "$CHART_PATH" \
+        --namespace "$HELM_NAMESPACE" \
+        --output ../report.json
 
       if [ -n "$HELM_GUARD_MODE" ]; then
-        ARGS="$ARGS --mode \"$HELM_GUARD_MODE\""
+        set -- "$@" --mode "$HELM_GUARD_MODE"
       fi
 
       if [ -n "$HELM_RELEASE_NAME" ]; then
-        ARGS="$ARGS --release \"$HELM_RELEASE_NAME\""
+        set -- "$@" --release "$HELM_RELEASE_NAME"
       fi
 
       if [ -n "$HELM_VALUES_FILES" ]; then
         for values_file in $HELM_VALUES_FILES; do
-          ARGS="$ARGS --values \"$values_file\""
+          VALUES_PATH="$(resolve_path "$values_file")"
+          set -- "$@" --values "$VALUES_PATH"
         done
       fi
 
       echo "🔍 Comparing Helm desired state vs live OpenShift resources"
-      eval node dist/index.js $ARGS
+      node dist/index.js "$@"
 
   artifacts:
     when: always
@@ -47,14 +61,14 @@ helm_guard_validate:
 
       echo ""
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo "🛡️  HELM-GUARD REPORT READY"
+      echo "📄 HELM-GUARD REPORT READY"
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       echo ""
-      echo "📊 Validation report:"
+      echo "🔗 View validation report:"
       echo "👉 ${HELM_GUARD_UI_URL}/?reportUrl=${REPORT_URL}"
       echo ""
-      echo "ℹ️  Tip:"
-      echo "   ✅ No output issues → safe to deploy"
-      echo "   ⚠️  WARN only → review recommended"
-      echo "   ❌ FAIL → deployment should be blocked"
+      echo "ℹ️  Interpretation guide:"
+      echo "   ✅ No findings        → Safe to deploy"
+      echo "   ⚠️  WARN only         → Review recommended"
+      echo "   ❌ FAIL               → Deployment should be blocked"
       echo ""

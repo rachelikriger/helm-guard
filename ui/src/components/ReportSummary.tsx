@@ -17,6 +17,8 @@ interface ReportSummaryProps {
   timestamp?: string;
   includedKinds?: string[];
   includedResourceNames?: string[];
+  namespaceResourceCount?: number;
+  clusterResourceCount?: number;
 }
 
 const formatKindList = (kinds: string[]): string => {
@@ -44,6 +46,8 @@ export function ReportSummary({
   timestamp,
   includedKinds = [],
   includedResourceNames = [],
+  namespaceResourceCount = summary.total,
+  clusterResourceCount = 0,
 }: ReportSummaryProps) {
   const summaryMessage =
     summary.failures > 0
@@ -94,12 +98,17 @@ export function ReportSummary({
         <div className="text-xs text-muted-foreground uppercase tracking-wider">
           Resource Coverage
         </div>
+        {clusterResourceCount > 0 && (
+          <div className="text-xs text-muted-foreground">
+            + {clusterResourceCount} cluster-scoped resources (not deployment-blocking)
+          </div>
+        )}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <SummaryCard
           label="Resources compared"
-          value={summary.total}
+          value={namespaceResourceCount}
           icon={<Box className="w-4 h-4" />}
-          description="Count of compared resources (Helm render + live)."
+          description="Namespace resources compared (Helm render + live)."
           variant="default"
         />
         <SummaryCard

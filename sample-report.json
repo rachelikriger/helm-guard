@@ -2,12 +2,12 @@
   "timestamp": "2025-03-08T12:34:56.789Z",
   "config": {
     "helmChart": "./charts/my-app",
-    "namespace": "default",
+    "namespace": "prep",
     "strictMode": false,
     "mode": "bootstrap"
   },
   "summary": {
-    "total": 3,
+    "total": 4,
     "matched": 1,
     "drifted": 1,
     "missingLive": 1,
@@ -17,12 +17,12 @@
   },
   "results": [
     {
-      "resourceKey": "Deployment/default/my-app",
+      "resourceKey": "Deployment/prep/my-app",
       "status": "MATCH",
       "differences": []
     },
     {
-      "resourceKey": "Service/default/my-app",
+      "resourceKey": "Service/prep/my-app",
       "status": "DRIFT",
       "differences": [
         {
@@ -34,8 +34,13 @@
       ]
     },
     {
-      "resourceKey": "ConfigMap/default/my-app-config",
+      "resourceKey": "ConfigMap/prep/my-app-config",
       "status": "MISSING_LIVE",
+      "differences": []
+    },
+    {
+      "resourceKey": "ClusterRole::cluster/my-app-reader",
+      "status": "MATCH",
       "differences": []
     }
   ]

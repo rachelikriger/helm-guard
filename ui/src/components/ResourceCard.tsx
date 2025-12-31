@@ -3,35 +3,43 @@ import { ChevronDown } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { DiffTable } from './DiffTable';
 import type { ResourceResult } from '@/types/report';
+import { classifyResourceKey } from '../../../shared/resource-scope';
 
 interface ResourceCardProps {
   resource: ResourceResult;
   index: number;
+  isClusterScoped?: boolean;
+  namespaceFallback?: string;
 }
 
-function parseResourceKey(resourceKey: string): { kind: string; namespace: string; name: string } {
-  const parts = resourceKey.split('/');
-  if (parts.length === 3) {
-    return { kind: parts[0], namespace: parts[1], name: parts[2] };
-  } else if (parts.length === 2) {
-    return { kind: parts[0], namespace: '', name: parts[1] };
-  }
-  return { kind: '', namespace: '', name: resourceKey };
-}
-
-export function ResourceCard({ resource, index }: ResourceCardProps) {
+export function ResourceCard({
+  resource,
+  index,
+  isClusterScoped,
+  namespaceFallback,
+}: ResourceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const diffCount = resource.differences?.length ?? 0;
   const hasDiffs = diffCount > 0;
-  
-  const { kind, namespace, name } = useMemo(
-    () => parseResourceKey(resource.resourceKey),
-    [resource.resourceKey]
+
+  const parsed = useMemo(
+    () => classifyResourceKey(resource.resourceKey, namespaceFallback),
+    [resource.resourceKey, namespaceFallback]
   );
+  const isCluster = isClusterScoped ?? parsed.scope === "cluster";
+  const scopeNote = isCluster
+    ? "Cluster-scoped - informational only."
+    : parsed.inferredNamespace
+      ? "Namespace inferred from report configuration."
+      : parsed.legacyKey
+        ? "Scope inferred from legacy resource key."
+        : undefined;
 
   return (
     <div 
-      className="bg-card border border-border rounded-lg overflow-hidden animate-fade-in"
+      className={`bg-card border border-border rounded-lg overflow-hidden animate-fade-in ${
+        isCluster ? "border-border/60 bg-card/60" : ""
+      }`}
       style={{ animationDelay: `${index * 30}ms` }}
     >
       <button
@@ -44,16 +52,24 @@ export function ResourceCard({ resource, index }: ResourceCardProps) {
         `}
       >
         <div className="flex items-center gap-4 min-w-0">
-          <StatusBadge status={resource.status} />
+          <StatusBadge
+            status={resource.status}
+            scopeNote={scopeNote}
+          />
           <div className="min-w-0">
             <span className="text-xs text-muted-foreground uppercase tracking-wider">
-              {kind}
+              {parsed.kind}
             </span>
-            <p className="font-mono text-sm text-foreground truncate">
-              {namespace && (
-                <span className="text-muted-foreground">{namespace}/</span>
+            {isCluster && (
+              <span className="ml-2 inline-flex items-center rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+                Cluster-scoped
+              </span>
+            )}
+            <p className={`font-mono text-sm truncate ${isCluster ? "text-muted-foreground" : "text-foreground"}`}>
+              {parsed.namespace && (
+                <span className="text-muted-foreground">{parsed.namespace}/</span>
               )}
-              {name}
+              {parsed.name}
             </p>
           </div>
         </div>

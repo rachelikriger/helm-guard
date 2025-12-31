@@ -24,7 +24,12 @@ export const runBootstrapComparison = (
   const liveResources = fetchLiveResources(params.namespace, {
     contextLabel: MODE.BOOTSTRAP,
   });
-  return compareResources(helmResources, liveResources, params.strict);
+  return compareResources(
+    helmResources,
+    liveResources,
+    params.strict,
+    params.namespace
+  );
 };
 
 /**

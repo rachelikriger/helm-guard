@@ -77,7 +77,7 @@ try {
     fs.writeFileSync(opts.output, JSON.stringify(report, null, 2));
   }
 
-  const exitCode = printReport(results);
+  const exitCode = printReport(results, opts.namespace);
   process.exit(exitCode);
 } catch (err) {
   const message = err instanceof Error ? err.message : String(err);

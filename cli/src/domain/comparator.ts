@@ -9,16 +9,18 @@ import {
   RESOURCE_STATUS,
 } from "./types";
 import { normalize } from "./normalizer";
+import { isClusterScopedKind } from "../../../shared/resource-scope";
 
 export const compareResources = (
   helm: K8sResource[],
   live: K8sResource[],
-  strict: boolean
+  strict: boolean,
+  defaultNamespace: string
 ): ComparisonResult[] => {
   const results: ComparisonResult[] = [];
 
-  const helmMap = mapByKey(helm.map(normalize));
-  const liveMap = mapByKey(live.map(normalize));
+  const helmMap = mapByKey(helm.map(normalize), defaultNamespace);
+  const liveMap = mapByKey(live.map(normalize), defaultNamespace);
 
   for (const [key, helmRes] of helmMap) {
     const liveRes = liveMap.get(key);
@@ -109,11 +111,24 @@ const formatDiffPath = (path: Array<string | number> | undefined): string => {
   return path.map(segment => String(segment)).join(".");
 };
 
-const mapByKey = (resources: K8sResource[]): Map<string, K8sResource> => {
+const mapByKey = (
+  resources: K8sResource[],
+  defaultNamespace: string
+): Map<string, K8sResource> => {
   return new Map(
-    resources.map(r => [
-      `${r.kind}/${r.metadata.namespace ?? "default"}/${r.metadata.name}`,
-      r
-    ])
+    resources.map(r => [buildResourceKey(r, defaultNamespace), r])
   );
+};
+
+const buildResourceKey = (
+  resource: K8sResource,
+  defaultNamespace: string
+): string => {
+  const kind = resource.kind.trim();
+  const name = resource.metadata.name.trim();
+  if (isClusterScopedKind(kind)) {
+    return `${kind}::cluster/${name}`;
+  }
+  const namespace = resource.metadata.namespace?.trim() || defaultNamespace.trim();
+  return `${kind}/${namespace}/${name}`;
 };
