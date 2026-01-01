@@ -27,8 +27,7 @@ export const runBootstrapComparison = (
   return compareResources(
     helmResources,
     liveResources,
-    params.strict,
-    params.namespace
+    params.strict
   );
 };
 

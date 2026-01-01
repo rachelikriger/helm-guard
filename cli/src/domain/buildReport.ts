@@ -7,24 +7,22 @@ import {
   ReportConfig,
   ResourceStatus,
 } from "./types";
-import { classifyResourceKey } from "../../../shared/resource-scope";
 
 export const buildReport = (
   results: ComparisonResult[],
   config: ReportConfig
 ): HelmGuardReport => {
-  const namespaceResults = results.filter(result => {
-    const scope = classifyResourceKey(result.resourceKey, config.namespace).scope;
-    return scope !== "cluster";
-  });
   const summary = {
-    total: namespaceResults.length,
-    matched: countByStatus(namespaceResults, RESOURCE_STATUS.MATCH),
-    drifted: countByStatus(namespaceResults, RESOURCE_STATUS.DRIFT),
-    missingLive: countByStatus(namespaceResults, RESOURCE_STATUS.MISSING_LIVE),
-    missingHelm: countByStatus(namespaceResults, RESOURCE_STATUS.MISSING_HELM),
-    warnings: countByAction(namespaceResults, DIFF_ACTION.WARN),
-    failures: countByAction(namespaceResults, DIFF_ACTION.FAIL),
+    total: results.length,
+    matched: countByStatus(results, RESOURCE_STATUS.MATCH),
+    drifted: countByStatus(results, RESOURCE_STATUS.DRIFT),
+    missingLive: countByStatus(results, RESOURCE_STATUS.MISSING_LIVE),
+    missingHelm: countByStatus(results, RESOURCE_STATUS.MISSING_HELM),
+    warnings: countByAction(results, DIFF_ACTION.WARN),
+    failures:
+      countByAction(results, DIFF_ACTION.FAIL) +
+      countByStatus(results, RESOURCE_STATUS.MISSING_LIVE) +
+      countByStatus(results, RESOURCE_STATUS.MISSING_HELM),
   };
 
   return {

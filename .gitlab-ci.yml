@@ -14,6 +14,15 @@ helm_guard_validate:
     - cd cli
     - npm ci
     - npm run build
+    - echo "Р?>нП,? Installing Helm and OpenShift CLI"
+    - apt-get update -y
+    - apt-get install -y curl tar gzip
+    - curl -fsSL -o /tmp/helm.tar.gz https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz
+    - tar -xzf /tmp/helm.tar.gz -C /tmp
+    - mv /tmp/linux-amd64/helm /usr/local/bin/helm
+    - curl -fsSL -o /tmp/oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+    - tar -xzf /tmp/oc.tar.gz -C /tmp
+    - mv /tmp/oc /usr/local/bin/oc
 
     - echo "🛡️ Running helm-guard validation"
     - |

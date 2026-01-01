@@ -8,6 +8,13 @@ const IGNORED_METADATA_FIELDS = [
   "managedFields"
 ];
 
+const IGNORED_METADATA_ANNOTATIONS = new Set([
+  "deployment.kubernetes.io/revision",
+  "kubectl.kubernetes.io/last-applied-configuration",
+  "meta.helm.sh/release-name",
+  "meta.helm.sh/release-namespace",
+]);
+
 export const normalize = (resource: K8sResource): K8sResource => {
   const clone = structuredClone(resource);
 
@@ -20,6 +27,10 @@ export const normalize = (resource: K8sResource): K8sResource => {
   if (clone.metadata.annotations) {
     for (const key of Object.keys(clone.metadata.annotations)) {
       if (key.startsWith("openshift.io")) {
+        delete clone.metadata.annotations[key];
+        continue;
+      }
+      if (IGNORED_METADATA_ANNOTATIONS.has(key)) {
         delete clone.metadata.annotations[key];
       }
     }

@@ -7,13 +7,13 @@
     "mode": "bootstrap"
   },
   "summary": {
-    "total": 4,
+    "total": 3,
     "matched": 1,
     "drifted": 1,
     "missingLive": 1,
     "missingHelm": 0,
     "warnings": 1,
-    "failures": 0
+    "failures": 1
   },
   "results": [
     {
@@ -36,11 +36,6 @@
     {
       "resourceKey": "ConfigMap/prep/my-app-config",
       "status": "MISSING_LIVE",
-      "differences": []
-    },
-    {
-      "resourceKey": "ClusterRole::cluster/my-app-reader",
-      "status": "MATCH",
       "differences": []
     }
   ]

@@ -4,7 +4,6 @@ import { ReportSummary } from './ReportSummary';
 import { Filters } from './Filters';
 import { ResourceList } from './ResourceList';
 import type { HelmGuardReport, ResourceStatus, DiffAction } from '@/types/report';
-import { classifyResourceKey } from '../../../shared/resource-scope';
 
 interface ReportViewerProps {
   report: HelmGuardReport;
@@ -15,24 +14,8 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<ResourceStatus[]>([]);
   const [selectedActions, setSelectedActions] = useState<DiffAction[]>([]);
-  const [includeClusterScoped, setIncludeClusterScoped] = useState(false);
 
-  const { namespaceResults, clusterResults } = useMemo(() => {
-    const namespace: typeof report.results = [];
-    const cluster: typeof report.results = [];
-    for (const result of report.results) {
-      const scope = classifyResourceKey(
-        result.resourceKey,
-        report.config?.namespace
-      ).scope;
-      if (scope === "cluster") {
-        cluster.push(result);
-      } else {
-        namespace.push(result);
-      }
-    }
-    return { namespaceResults: namespace, clusterResults: cluster };
-  }, [report.results, report.config?.namespace]);
+  const namespaceResults = report.results;
 
   const namespaceSummary = useMemo(() => {
     const countByStatus = (status: ResourceStatus): number =>
@@ -49,37 +32,34 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
       missingLive: countByStatus("MISSING_LIVE"),
       missingHelm: countByStatus("MISSING_HELM"),
       warnings: countByAction("WARN"),
-      failures: countByAction("FAIL"),
+      failures:
+        countByAction("FAIL") +
+        countByStatus("MISSING_LIVE") +
+        countByStatus("MISSING_HELM"),
     };
   }, [namespaceResults]);
 
   const includedKinds = useMemo(() => {
     const kinds = new Set<string>();
     for (const result of namespaceResults) {
-      const kind = classifyResourceKey(
-        result.resourceKey,
-        report.config?.namespace
-      ).kind.trim();
+      const kind = getKindFromKey(result.resourceKey).trim();
       if (kind) {
         kinds.add(kind);
       }
     }
     return Array.from(kinds).sort();
-  }, [namespaceResults, report.config?.namespace]);
+  }, [namespaceResults]);
 
   const includedResourceNames = useMemo(() => {
     const names = new Set<string>();
     for (const result of namespaceResults) {
-      const name = classifyResourceKey(
-        result.resourceKey,
-        report.config?.namespace
-      ).name.trim();
+      const name = getNameFromKey(result.resourceKey).trim();
       if (name) {
         names.add(name);
       }
     }
     return Array.from(names);
-  }, [namespaceResults, report.config?.namespace]);
+  }, [namespaceResults]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -128,7 +108,6 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
             includedKinds={includedKinds}
             includedResourceNames={includedResourceNames}
             namespaceResourceCount={namespaceResults.length}
-            clusterResourceCount={clusterResults.length}
           />
         </section>
 
@@ -144,8 +123,6 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
             onStatusChange={setSelectedStatuses}
             selectedActions={selectedActions}
             onActionChange={setSelectedActions}
-            includeClusterScoped={includeClusterScoped}
-            onIncludeClusterScopedChange={setIncludeClusterScoped}
           />
         </section>
 
@@ -156,11 +133,9 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
           </h2>
           <ResourceList
             namespaceResults={namespaceResults}
-            clusterResults={clusterResults}
             searchQuery={searchQuery}
             selectedStatuses={selectedStatuses}
             selectedActions={selectedActions}
-            includeClusterScoped={includeClusterScoped}
             namespaceLabel={report.config?.namespace}
           />
         </section>
@@ -177,3 +152,12 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
     </div>
   );
 }
+
+const getKindFromKey = (resourceKey: string): string => {
+  return resourceKey.split("/")[0] ?? "";
+};
+
+const getNameFromKey = (resourceKey: string): string => {
+  const parts = resourceKey.split("/");
+  return parts.length >= 3 ? parts[2] ?? "" : "";
+};

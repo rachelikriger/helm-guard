@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "CLI guardrail to validate Helm manifests against live OpenShift resources",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
   "bin": {
     "helm-guard": "dist/index.js"
   },

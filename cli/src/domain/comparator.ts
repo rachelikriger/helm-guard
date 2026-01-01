@@ -1,5 +1,4 @@
 import { diff, Diff } from "deep-diff";
-import { minimatch } from "minimatch";
 import {
   ComparisonResult,
   DIFF_ACTION,
@@ -9,18 +8,22 @@ import {
   RESOURCE_STATUS,
 } from "./types";
 import { normalize } from "./normalizer";
-import { isClusterScopedKind } from "../../../shared/resource-scope";
-
 export const compareResources = (
   helm: K8sResource[],
   live: K8sResource[],
-  strict: boolean,
-  defaultNamespace: string
+  strict: boolean
 ): ComparisonResult[] => {
   const results: ComparisonResult[] = [];
 
-  const helmMap = mapByKey(helm.map(normalize), defaultNamespace);
-  const liveMap = mapByKey(live.map(normalize), defaultNamespace);
+  const helmResources = helm
+    .map(normalize)
+    .filter(resource => hasNamespace(resource.metadata.namespace));
+  const liveResources = live
+    .map(normalize)
+    .filter(resource => hasNamespace(resource.metadata.namespace));
+
+  const helmMap = mapByKey(helmResources);
+  const liveMap = mapByKey(liveResources);
 
   for (const [key, helmRes] of helmMap) {
     const liveRes = liveMap.get(key);
@@ -95,7 +98,6 @@ const extractArraySide = (
 };
 
 const classifyDiff = (path: string, strict: boolean): DiffActionInternal => {
-  if (minimatch(path, "metadata.*")) return DIFF_ACTION.IGNORE;
   if (!strict) return DIFF_ACTION.WARN;
   return DIFF_ACTION.FAIL;
 };
@@ -111,24 +113,17 @@ const formatDiffPath = (path: Array<string | number> | undefined): string => {
   return path.map(segment => String(segment)).join(".");
 };
 
-const mapByKey = (
-  resources: K8sResource[],
-  defaultNamespace: string
-): Map<string, K8sResource> => {
-  return new Map(
-    resources.map(r => [buildResourceKey(r, defaultNamespace), r])
-  );
+const mapByKey = (resources: K8sResource[]): Map<string, K8sResource> => {
+  return new Map(resources.map(r => [buildResourceKey(r), r]));
 };
 
-const buildResourceKey = (
-  resource: K8sResource,
-  defaultNamespace: string
-): string => {
+const buildResourceKey = (resource: K8sResource): string => {
   const kind = resource.kind.trim();
   const name = resource.metadata.name.trim();
-  if (isClusterScopedKind(kind)) {
-    return `${kind}::cluster/${name}`;
-  }
-  const namespace = resource.metadata.namespace?.trim() || defaultNamespace.trim();
+  const namespace = resource.metadata.namespace?.trim() ?? "";
   return `${kind}/${namespace}/${name}`;
+};
+
+const hasNamespace = (namespace: string | undefined): boolean => {
+  return typeof namespace === "string" && namespace.trim().length > 0;
 };

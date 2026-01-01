@@ -50,6 +50,7 @@ There is **no backend**, **no database**, and **no deployment logic**.
 * ❌ Does NOT deploy anything
 * ❌ Does NOT approve changes
 * ❌ Does NOT modify clusters
+* Does NOT validate resources outside the target namespace
 * ❌ Does NOT require a backend server
 * ❌ Does NOT require a database
 
@@ -63,8 +64,8 @@ helm-guard is a **guardrail**, not a deployment system.
 
 Use when Helm is introduced for the first time.
 
-* Compares Helm-rendered manifests against **all workload resources** in the namespace
-* Missing resources are expected and typically classified as warnings
+* Compares Helm-rendered manifests against **namespace-scoped resources** in the namespace
+* Missing resources are treated as failures and block deployment by default
 * Suitable for discovering gaps during initial Helm adoption
 
 ```bash
@@ -72,8 +73,9 @@ Use when Helm is introduced for the first time.
 ````
 
 > ⚠️ **Coverage note**
-> `oc get all` does not include CRDs, Secrets, ConfigMaps, or cluster-scoped resources.
-> helm-guard focuses on workload-level resources (Deployments, Services, Jobs, etc.).
+> helm-guard validates resources within the target namespace only.
+> `oc get all` does not include Secrets, ConfigMaps, or most custom resources, so
+> those may appear as missing live even if they exist.
 
 ---
 
@@ -97,6 +99,8 @@ will result in a clear validation error.
 ## CLI Usage
 
 ### Build the CLI
+
+Node.js 18+ is required for the CLI runtime.
 
 ```bash
 cd cli
@@ -221,6 +225,8 @@ This JSON structure is a **stable public contract** shared between the CLI and U
 
 The config section may include `releaseName` and `valuesFiles` when provided.
 These fields are optional and omitted when not set.
+Report results contain namespace-scoped resources only, and resource keys are
+formatted as `Kind/namespace/name`.
 
 See `sample-report.json` for a complete example.
 

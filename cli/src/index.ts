@@ -7,6 +7,16 @@ import { buildReport } from "./domain/buildReport";
 import { validateHelmRenderOptions, validateInputs } from "./validation/cli";
 import { runBootstrapComparison, runHelmManagedComparison } from "./comparisonStrategies";
 
+type CliOptions = {
+  chart: string;
+  namespace: string;
+  mode?: Mode | string;
+  strict: boolean;
+  release?: string;
+  values: string[];
+  output?: string;
+};
+
 const program = new Command();
 
 program
@@ -33,15 +43,7 @@ const formatErrorMessage = (message: string): string => {
 
 try {
   program.parse();
-  const opts = program.opts<{
-    chart: string;
-    namespace: string;
-    mode?: Mode | string;
-    strict: boolean;
-    release?: string;
-    values: string[];
-    output?: string;
-  }>();
+  const opts = program.opts<CliOptions>();
 
   const mode = validateInputs(opts.chart, opts.namespace, opts.mode);
   const helmRenderOptions = validateHelmRenderOptions(opts.release, opts.values);
@@ -71,9 +73,7 @@ try {
       reportConfig.valuesFiles = helmRenderOptions.valuesFiles;
     }
 
-    const report = buildReport(results, {
-      ...reportConfig,
-    });
+    const report = buildReport(results, reportConfig);
     fs.writeFileSync(opts.output, JSON.stringify(report, null, 2));
   }
 

@@ -1,29 +1,22 @@
-import { useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useMemo } from 'react';
 import { ResourceCard } from './ResourceCard';
 import type { ResourceResult, ResourceStatus, DiffAction } from '@/types/report';
 
 interface ResourceListProps {
   namespaceResults: ResourceResult[];
-  clusterResults: ResourceResult[];
   searchQuery: string;
   selectedStatuses: ResourceStatus[];
   selectedActions: DiffAction[];
-  includeClusterScoped: boolean;
   namespaceLabel?: string;
 }
 
 export function ResourceList({ 
   namespaceResults, 
-  clusterResults,
   searchQuery, 
   selectedStatuses, 
   selectedActions,
-  includeClusterScoped,
   namespaceLabel,
 }: ResourceListProps) {
-  const [clusterExpanded, setClusterExpanded] = useState(false);
-
   const filteredResults = useMemo(() => {
     return namespaceResults.filter(result => {
       // Search filter
@@ -52,23 +45,18 @@ export function ResourceList({
     });
   }, [namespaceResults, searchQuery, selectedStatuses, selectedActions]);
 
-  if (filteredResults.length === 0 && (!includeClusterScoped || clusterResults.length === 0)) {
-    const hasOnlyCluster = namespaceResults.length === 0 && clusterResults.length > 0;
+  if (filteredResults.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground text-sm">
-          {hasOnlyCluster
-            ? 'No namespace resources in report'
-            : namespaceResults.length === 0 && clusterResults.length === 0
-              ? 'No resources in report'
-              : 'No namespace resources match the current filters'}
+          {namespaceResults.length === 0
+            ? 'No resources in report'
+            : 'No namespace resources match the current filters'}
         </p>
         <p className="text-xs text-muted-foreground mt-2">
-          {hasOnlyCluster
-            ? 'Enable "Include cluster-scoped resources" to review informational items.'
-            : namespaceResults.length === 0 && clusterResults.length === 0
-              ? 'Helm render or live OpenShift query returned no resources.'
-              : 'Adjust filters to review namespace-scoped resources.'}
+          {namespaceResults.length === 0
+            ? 'Helm render or live OpenShift query returned no resources.'
+            : 'Adjust filters to review namespace-scoped resources.'}
         </p>
       </div>
     );
@@ -94,50 +82,10 @@ export function ResourceList({
             key={result.resourceKey}
             resource={result}
             index={index}
-            isClusterScoped={false}
             namespaceFallback={namespaceLabel}
           />
         ))}
       </div>
-      {includeClusterScoped && clusterResults.length > 0 && (
-        <div className="pt-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">
-                Cluster-scoped resources
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Cluster-scoped resources are usually managed by the platform and do not block application deployment.
-              </p>
-            </div>
-            <button
-              onClick={() => setClusterExpanded(!clusterExpanded)}
-              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
-              aria-expanded={clusterExpanded}
-            >
-              {clusterExpanded ? "Hide" : "Show"} ({clusterResults.length})
-              <ChevronDown
-                className={`w-4 h-4 transition-transform ${
-                  clusterExpanded ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-          </div>
-          {clusterExpanded && (
-            <div className="mt-3 space-y-2">
-              {clusterResults.map((result, index) => (
-                <ResourceCard
-                  key={result.resourceKey}
-                  resource={result}
-                  index={index}
-                  isClusterScoped
-                  namespaceFallback={namespaceLabel}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
