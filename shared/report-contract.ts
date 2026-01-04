@@ -61,6 +61,7 @@ export interface ReportSummary {
 }
 
 export interface ReportSchema {
+  schemaVersion: 1;
   timestamp: string;
   config: ReportConfig;
   summary: ReportSummary;

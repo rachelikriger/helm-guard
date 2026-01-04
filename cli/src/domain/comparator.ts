@@ -11,16 +11,17 @@ import { shouldSuppressDiff } from "./applyPlatformDefaults";
 export const compareResources = (
   helm: K8sResource[],
   live: K8sResource[],
-  strict: boolean
+  strict: boolean,
+  targetNamespace: string
 ): ComparisonResult[] => {
   const results: ComparisonResult[] = [];
 
   const helmResources = helm
     .map(normalize)
-    .filter(resource => hasNamespace(resource.metadata.namespace));
+    .map(resource => applyNamespaceFallback(resource, targetNamespace));
   const liveResources = live
     .map(normalize)
-    .filter(resource => hasNamespace(resource.metadata.namespace));
+    .filter(resource => isNamespaceMatch(resource, targetNamespace));
 
   const helmMap = mapByKey(helmResources);
   const liveMap = mapByKey(liveResources);
@@ -140,6 +141,27 @@ const buildResourceKey = (resource: K8sResource): string => {
   return `${kind}/${namespace}/${name}`;
 };
 
-const hasNamespace = (namespace: string | undefined): boolean => {
-  return typeof namespace === "string" && namespace.trim().length > 0;
+const isNamespaceMatch = (
+  resource: K8sResource,
+  targetNamespace: string
+): boolean => {
+  const namespace = resource.metadata.namespace?.trim();
+  return namespace === targetNamespace.trim();
+};
+
+const applyNamespaceFallback = (
+  resource: K8sResource,
+  targetNamespace: string
+): K8sResource => {
+  if (resource.metadata.namespace && resource.metadata.namespace.trim().length > 0) {
+    return resource;
+  }
+
+  return {
+    ...resource,
+    metadata: {
+      ...resource.metadata,
+      namespace: targetNamespace.trim(),
+    },
+  };
 };

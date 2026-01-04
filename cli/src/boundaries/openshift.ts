@@ -1,5 +1,5 @@
 import { K8sKind, K8sResource } from "../domain/types";
-import { execWithContext, formatError, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
+import { execWithContext, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
 import { isK8sResource, isRecord } from "../validation/domain";
 
 export interface FetchOptions {
@@ -19,19 +19,12 @@ export const fetchLiveResources = (
     return [];
   }
 
-  let yamlOutput = "";
-  try {
-    yamlOutput = runOcGetKinds(
-      namespace,
-      whitelistedKinds,
-      options.labelSelector,
-      options.contextLabel
-    );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : formatError(err);
-    console.error(`helm-guard warning: ${message}`);
-    return [];
-  }
+  const yamlOutput = runOcGetKinds(
+    namespace,
+    whitelistedKinds,
+    options.labelSelector,
+    options.contextLabel
+  );
   const documents = parseYamlDocumentsWithContext(
     yamlOutput,
     "OpenShift YAML output"

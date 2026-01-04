@@ -25,6 +25,7 @@ export const buildReport = (
   };
 
   return {
+    schemaVersion: 1,
     timestamp: new Date().toISOString(),
     config,
     summary,

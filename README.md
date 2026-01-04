@@ -166,6 +166,21 @@ Only add rules when you can confirm the live value is a stable default across cl
 
 ---
 
+## Reliability & Failure Behavior
+
+- Any failure to run Helm or OpenShift commands is treated as a hard error.
+- `oc` failures (auth, network, API errors) stop the run with a non-zero exit code.
+- The tool never converts operational failures into empty or partial results.
+- Helm resources without `metadata.namespace` are treated as belonging to the target namespace.
+- Live resources are always filtered to the target namespace only.
+
+## Report Contract
+
+- `report.json` includes `schemaVersion: 1` and is considered stable within major releases.
+- `timestamp` is informational only and should be ignored for deterministic comparisons.
+
+---
+
 ## Repository Structure
 
 ```
