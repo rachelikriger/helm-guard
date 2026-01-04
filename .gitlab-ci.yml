@@ -3,6 +3,7 @@
 
 variables:
   HELM_GUARD_UI_URL: "https://helm-guard-ui.my-company.com"
+  HELM_GUARD_CLI_IMAGE: "image-registry.openshift.svc:5000/<ns>/helm-guard-cli:stable"
 
 helm_guard_validate:
   stage: validate
