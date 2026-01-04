@@ -1,114 +1,70 @@
-````md
+﻿````md
 # 🛡️ helm-guard
 
-**helm-guard** is a lightweight guardrail tool that validates Helm manifests
-against live OpenShift resources **before deployment**.
+**helm-guard** is a lightweight validation tool that compares
+**Helm-rendered manifests** against **live OpenShift resources**
+*before deployment*.
 
-It helps teams adopt Helm safely, detect configuration drift,
-and gain confidence before performing a real `helm upgrade`.
-
----
-
-## What is helm-guard?
-
-helm-guard consists of **two completely decoupled components**:
-
-* **CLI** – performs the comparison and generates a validation report
-* **UI** – a read-only viewer for visualizing the validation report
-
-There is **no backend**, **no database**, and **no deployment logic**.
+It helps teams detect configuration drift and validate Helm changes
+safely, deterministically, and without modifying the cluster.
 
 ---
 
-## Key Principles
+## What does helm-guard do?
 
-* ✔️ Validation only (no deployment)
-* ✔️ Safe to run in CI pipelines
-* ✔️ Works in offline / restricted environments
-* ✔️ Designed for first-time Helm adoption
-* ✔️ Follows SOLID and clean architecture principles
+helm-guard validates that what **Helm would deploy**
+matches what is **currently running** in a given namespace.
 
----
+It:
 
-## What helm-guard DOES
-
-* Renders desired state using `helm template`
-* Fetches live resources from OpenShift using `oc`
-* Normalizes system-generated and noisy fields
-* Performs **semantic comparison** (not raw YAML diff)
-* Classifies differences as:
-  * `WARN` – non-breaking drift
-  * `FAIL` – breaking or unsafe drift
-* Produces:
-  * Human-readable console output
-  * Optional structured JSON report (for CI artifacts & UI)
+- Renders manifests using `helm template`
+- Fetches live, namespace-scoped resources from OpenShift
+- Normalizes noisy/system fields
+- Performs a **semantic comparison** (not a raw YAML diff)
+- Produces a clear validation result for CI and humans
 
 ---
 
-## What helm-guard DOES NOT do
+## When should I use it?
 
-* ❌ Does NOT deploy anything
-* ❌ Does NOT approve changes
-* ❌ Does NOT modify clusters
-* Does NOT validate resources outside the target namespace
-* ❌ Does NOT require a backend server
-* ❌ Does NOT require a database
+Use helm-guard as a **pre-deployment gate**:
 
-helm-guard is a **guardrail**, not a deployment system.
+- Before running `helm upgrade`
+- During first-time Helm adoption
+- In CI pipelines to prevent unsafe changes
+- When validating environment-specific values (`-f` files, release names)
 
 ---
 
-## Comparison Modes
+## What does it output?
 
-### 1️⃣ Bootstrap mode (default)
+helm-guard produces:
 
-Use when Helm is introduced for the first time.
+- **Console summary** (human-readable)
+- **Optional JSON report** (for CI artifacts & UI visualization)
 
-* Compares Helm-rendered manifests against **namespace-scoped resources** in the namespace
-* Missing resources are treated as failures and block deployment by default
-* Suitable for discovering gaps during initial Helm adoption
+Exit codes are CI-friendly:
 
-```bash
---mode bootstrap
-````
-
-> ⚠️ **Coverage note**
-> helm-guard validates resources within the target namespace only.
-> `oc get all` does not include Secrets, ConfigMaps, or most custom resources, so
-> those may appear as missing live even if they exist.
-
----
-
-### 2️⃣ Helm-managed mode (not yet supported)
-
-This mode is **intentionally disabled** in the current release.
-
-It is reserved for future steady-state Helm validation
-(e.g. label-filtered comparisons or `helm diff` integration).
-
-Attempting to run:
-
-```bash
---mode helm-managed
-```
-
-will result in a clear validation error.
+| Code | Meaning |
+| ---- | ------- |
+| 0    | No differences |
+| 1    | Warnings only |
+| 2    | Blocking differences detected |
+| 3    | Runtime or usage error |
 
 ---
 
 ## CLI Usage
 
-### Build the CLI
+### Requirements
 
-Node.js 18+ is required for the CLI runtime.
+- Node.js **18+**
+- Helm and OpenShift authentication already configured
+  (`oc login` / `KUBECONFIG`)
 
-```bash
-cd cli
-npm install
-npm run build
-```
+---
 
-### Run validation
+### Run locally
 
 ```bash
 node dist/index.js \
@@ -117,14 +73,12 @@ node dist/index.js \
   --release my-release \
   --values values.yaml \
   --values values.prod.yaml \
-  --strict \
-  --output ./report.json
-```
+  --output report.json
+````
 
-The CLI always prints a readable summary to the console.
-When `--output` is provided, a structured JSON report is also written to disk.
-helm-guard assumes an active OpenShift context (`oc login` / `KUBECONFIG`).
-Authentication is intentionally handled outside the tool.
+> ⚠️ **Important**
+> helm-guard is only as accurate as the Helm context you provide.
+> Always pass the same `--release` and `--values` used in deployment.
 
 ---
 
@@ -132,132 +86,55 @@ Authentication is intentionally handled outside the tool.
 
 | Option        | Description                                  |
 | ------------- | -------------------------------------------- |
-| `--chart`     | Path to Helm chart directory                 |
-| `--namespace` | OpenShift namespace                          |
-| `--mode`      | `bootstrap` (default)                        |
-| `--strict`    | Classify differences as FAIL instead of WARN |
-| `--release`   | Helm release name (optional)                 |
+| `--chart`     | Path to Helm chart                           |
+| `--namespace` | Target OpenShift namespace                   |
+| `--release`   | Helm release name                            |
 | `--values`    | Helm values file (repeatable, order matters) |
+| `--strict`    | Treat all diffs as blocking                  |
 | `--output`    | Write JSON report to file                    |
 
 ---
 
-## Helm Rendering Parity
-
-helm-guard renders manifests using the same inputs as a production Helm pipeline:
-
-```
-helm template [RELEASE] [CHART] -f values... --namespace ...
-```
-
-Release name and values files are critical for accurate output. Missing or mismatched
-inputs often cause false-positive diffs because the rendered manifests do not match
-what would be deployed. helm-guard is only as accurate as the Helm context you pass in.
-
----
-
-### Exit Codes (CI-Friendly)
-
-| Code | Meaning                                |
-| ---- | -------------------------------------- |
-| 0    | No differences                         |
-| 1    | Warnings only                          |
-| 2    | Failures or missing resources detected |
-| 3    | Runtime or usage error                 |
-
-These exit codes are designed for CI gating.
-
----
-
-## UI Usage
-
-### What the UI is
-
-The UI is a **static, client-side application**.
-
-It:
-
-* Does NOT execute Helm
-* Does NOT connect to OpenShift
-* Does NOT perform comparisons
-
-Its **only responsibility** is to visualize a JSON report generated by the CLI.
-
----
-
-### Run the UI locally
-
-```bash
-cd ui
-npm install
-npm run dev
-```
-
----
-
-### Load a report
-
-You can load a report in two ways:
-
-#### 1️⃣ Manual upload
-
-Upload a JSON file generated by the CLI.
-
-#### 2️⃣ URL-based loading (recommended for CI)
-
-```text
-http://localhost:5173/?reportUrl=<URL_TO_report.json>
-```
-
-This is ideal for CI artifacts (e.g., GitLab job artifacts).
-
----
-
-## JSON Contract
-
-The CLI produces a JSON report consumed by the UI.
-
-This JSON structure is a **stable public contract** shared between the CLI and UI.
-
-* The CLI **produces** the report
-* The UI **consumes** the report
-* No runtime coupling exists between them
-
-The config section may include `releaseName` and `valuesFiles` when provided.
-These fields are optional and omitted when not set.
-Report results contain namespace-scoped resources only, and resource keys are
-formatted as `Kind/namespace/name`.
-
-See `sample-report.json` for a complete example.
-
----
-
-## CI Integration (High Level)
+## CI Integration
 
 Typical CI flow:
 
-1. Run `helm-guard` in a pipeline job with the same Helm parameters used for deployment
+1. Run `helm-guard` inside a container
+2. Save `report.json` as an artifact
+3. Review results via the UI
 
-2. Write `report.json` as a job artifact
-
-3. Publish a link to the UI with:
-
-   ```
-   ?reportUrl=<artifact URL>
-   ```
-
-4. Developers review the report visually
-
-helm-guard is safe to run as a **pre-deployment gate**.
-Exit codes are CI-friendly: 0 (clean), 1 (warnings), 2 (failures), 3 (error).
+helm-guard **does not** deploy anything and **does not** authenticate to the cluster.
+Those concerns are handled by the CI environment.
 
 ---
 
-## Common Pitfalls / Important Notes
+## UI
 
-* Missing `-f` files leads to misleading diffs
-* helm-guard does not infer environment or release context automatically
-* You are responsible for passing the correct Helm inputs for parity
+The UI is a **static viewer** for helm-guard reports.
+
+It:
+
+* Does not run Helm
+* Does not connect to OpenShift
+* Visualizes validation results only
+
+You can load a report via URL:
+
+```
+https://helm-guard-ui/?reportUrl=<artifact-url>
+```
+
+---
+
+## Container Usage
+
+helm-guard is packaged as two images:
+
+* **CLI image** – runs the validation logic
+* **UI image** – serves the report viewer
+
+CI and production environments run the CLI image directly.
+Dockerfiles are provided for OpenShift deployment.
 
 ---
 
@@ -265,21 +142,19 @@ Exit codes are CI-friendly: 0 (clean), 1 (warnings), 2 (failures), 3 (error).
 
 ```
 helm-guard/
-├── cli/                # CLI comparison logic
-├── shared/             # Shared report contract
-├── ui/                 # Read-only report viewer
-├── sample-report.json  # Example report
+├── cli/        # Validation engine (CLI)
+├── shared/     # JSON report contract
+├── ui/         # Report viewer (static UI)
 └── README.md
 ```
 
 ---
 
-## Final Notes
+## Summary
 
-helm-guard is intentionally minimal.
+helm-guard is a **guardrail**, not a deployment tool.
 
-If it fails, it fails loudly.
-If it warns, it warns clearly.
-If it passes, you can deploy with confidence.
+If it passes — you can deploy with confidence.
+If it fails — it tells you exactly why.
 
 ```

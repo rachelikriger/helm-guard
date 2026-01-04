@@ -4,6 +4,7 @@
     "module": "CommonJS",
     "outDir": "dist",
     "rootDir": "src",
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
     "composite": true,
     "skipLibCheck": true,
     "strict": true,

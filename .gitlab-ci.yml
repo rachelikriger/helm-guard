@@ -1,4 +1,4 @@
-stages:
+﻿stages:
   - validate
 
 variables:
@@ -6,39 +6,20 @@ variables:
 
 helm_guard_validate:
   stage: validate
-  image: node:20
+  image: "$HELM_GUARD_CLI_IMAGE"
 
   script:
-    - echo "🧩 Installing helm-guard CLI dependencies"
-    - ROOT_DIR="${CI_PROJECT_DIR:-$PWD}"
-    - cd cli
-    - npm ci
-    - npm run build
-    - echo "Р?>нП,? Installing Helm and OpenShift CLI"
-    - apt-get update -y
-    - apt-get install -y curl tar gzip
-    - curl -fsSL -o /tmp/helm.tar.gz https://get.helm.sh/helm-v3.14.4-linux-amd64.tar.gz
-    - tar -xzf /tmp/helm.tar.gz -C /tmp
-    - mv /tmp/linux-amd64/helm /usr/local/bin/helm
-    - curl -fsSL -o /tmp/oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
-    - tar -xzf /tmp/oc.tar.gz -C /tmp
-    - mv /tmp/oc /usr/local/bin/oc
-
-    - echo "🛡️ Running helm-guard validation"
     - |
-      resolve_path() {
-        case "$1" in
-          /*) printf '%s\n' "$1" ;;
-          *)  printf '%s\n' "$ROOT_DIR/$1" ;;
-        esac
-      }
-
-      CHART_PATH="$(resolve_path "$HELM_CHART_PATH")"
+      echo ""
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "🛡️  HELM-GUARD | Validation Started"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
 
       set -- \
-        --chart "$CHART_PATH" \
+        --chart "$HELM_CHART_PATH" \
         --namespace "$HELM_NAMESPACE" \
-        --output ../report.json
+        --output report.json
 
       if [ -n "$HELM_GUARD_MODE" ]; then
         set -- "$@" --mode "$HELM_GUARD_MODE"
@@ -50,13 +31,13 @@ helm_guard_validate:
 
       if [ -n "$HELM_VALUES_FILES" ]; then
         for values_file in $HELM_VALUES_FILES; do
-          VALUES_PATH="$(resolve_path "$values_file")"
-          set -- "$@" --values "$VALUES_PATH"
+          set -- "$@" --values "$values_file"
         done
       fi
 
       echo "🔍 Comparing Helm desired state vs live OpenShift resources"
-      node dist/index.js "$@"
+      echo ""
+      helm-guard "$@"
 
   artifacts:
     when: always
@@ -70,7 +51,7 @@ helm_guard_validate:
 
       echo ""
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo "📄 HELM-GUARD REPORT READY"
+      echo "📄 HELM-GUARD | Report Ready"
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       echo ""
       echo "🔗 View validation report:"
