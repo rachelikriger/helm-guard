@@ -1,17 +1,20 @@
 import {
+  ComparisonOutput,
   ComparisonResult,
   CountableAction,
   DIFF_ACTION,
   HelmGuardReport,
+  REPORT_SCHEMA_VERSION,
   RESOURCE_STATUS,
   ReportConfig,
   ResourceStatus,
 } from "./types";
 
 export const buildReport = (
-  results: ComparisonResult[],
+  comparison: ComparisonOutput,
   config: ReportConfig
 ): HelmGuardReport => {
+  const results = comparison.results;
   const summary = {
     total: results.length,
     matched: countByStatus(results, RESOURCE_STATUS.MATCH),
@@ -26,8 +29,11 @@ export const buildReport = (
   };
 
   return {
+    schemaVersion: REPORT_SCHEMA_VERSION,
     timestamp: new Date().toISOString(),
     config,
+    selection: comparison.selection,
+    normalization: comparison.normalization,
     summary,
     results,
   };

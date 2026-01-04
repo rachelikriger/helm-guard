@@ -1,19 +1,31 @@
 import type {
   DiffAction,
+  DiffItem,
+  DiffPath,
   HelmGuardReport,
+  NormalizationResult,
   ReportConfig,
+  ReportNormalizationSummary,
+  ReportSchema,
+  ReportSelection,
   ReportSummary,
-  ResourceDiff,
+  ResourceIdentifier,
   ResourceResult,
   ResourceStatus,
 } from "../../../shared/report-contract";
 
 export type {
   DiffAction,
+  DiffItem,
+  DiffPath,
   HelmGuardReport,
+  NormalizationResult,
   ReportConfig,
+  ReportNormalizationSummary,
+  ReportSchema,
+  ReportSelection,
   ReportSummary,
-  ResourceDiff,
+  ResourceIdentifier,
   ResourceResult,
   ResourceStatus,
 };

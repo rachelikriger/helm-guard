@@ -10,5 +10,5 @@
     "skipLibCheck": true,
     "strict": true
   },
-  "include": ["report-contract.ts"]
+  "include": ["report-contract.ts", "normalization-rules.ts"]
 }

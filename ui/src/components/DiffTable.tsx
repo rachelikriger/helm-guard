@@ -1,9 +1,9 @@
 import { ActionBadge } from './ActionBadge';
 import { JsonValue } from './JsonValue';
-import type { ResourceDiff } from '@/types/report';
+import type { DiffItem, DiffPath } from '@/types/report';
 
 interface DiffTableProps {
-  diffs: ResourceDiff[];
+  diffs: DiffItem[];
 }
 
 export function DiffTable({ diffs }: DiffTableProps) {
@@ -39,7 +39,7 @@ export function DiffTable({ diffs }: DiffTableProps) {
             <tr key={index} className="hover:bg-muted/30 transition-colors">
               <td className="py-3 px-3 align-top">
                 <code className="text-xs font-mono text-primary break-all">
-                  {diff.path}
+                  {formatDiffPath(diff.path)}
                 </code>
               </td>
               <td className="py-3 px-3 align-top max-w-xs">
@@ -58,3 +58,19 @@ export function DiffTable({ diffs }: DiffTableProps) {
     </div>
   );
 }
+
+const formatDiffPath = (path: DiffPath): string => {
+  if (!path || path.length === 0) return "";
+
+  return path
+    .map(segment => {
+      if (segment.type === "index") {
+        return `[${segment.index}]`;
+      }
+      return segment.name;
+    })
+    .reduce((acc, part) => {
+      if (part.startsWith("[")) return `${acc}${part}`;
+      return acc ? `${acc}.${part}` : part;
+    }, "");
+};

@@ -19,7 +19,8 @@ It:
 
 - Renders manifests using `helm template`
 - Fetches live, namespace-scoped resources from OpenShift
-- Normalizes noisy/system fields
+- Selects live resources only for kinds rendered by Helm (plus optional extra kinds)
+- Normalizes noisy/system fields and safe platform defaults
 - Performs a **semantic comparison** (not a raw YAML diff)
 - Produces a clear validation result for CI and humans
 
@@ -91,7 +92,53 @@ node dist/index.js \
 | `--release`   | Helm release name                            |
 | `--values`    | Helm values file (repeatable, order matters) |
 | `--strict`    | Treat all diffs as blocking                  |
+| `--include-kind` | Include extra kinds beyond Helm render (repeatable) |
 | `--output`    | Write JSON report to file                    |
+
+---
+
+## Resource relevance (noise reduction)
+
+helm-guard treats Helm as the source of truth. It compares:
+
+- All Helm-rendered resources (always included)
+- Live resources only when their kind exists in the Helm render
+- Optional extra kinds only when explicitly included via `--include-kind`
+
+This avoids drifting on unrelated resources without hiding Helm-managed risk.
+
+---
+
+## Platform default normalization
+
+Before diffing, helm-guard suppresses **safe platform defaults** only when:
+
+- Helm does not set the field
+- Live value matches the known default
+
+Initial safe defaults:
+
+- `dnsPolicy: ClusterFirst`
+- `terminationMessagePath: /dev/termination-log`
+- `terminationMessagePolicy: File`
+- `service.spec.type: ClusterIP`
+- `service.ports[*].protocol: TCP`
+- `imagePullPolicy: Always` (only when omitted in Helm)
+
+These rules live in `shared/normalization-rules.ts`. Each rule is explicit, typed,
+and must include a short rationale. When unsure, do not add a rule.
+
+---
+
+## Report schema
+
+The JSON report is the single source of truth and now includes:
+
+- `schemaVersion`
+- `selection` (Helm kinds, additional kinds, compared kinds)
+- `normalization` (rules applied and suppressed counts)
+
+The UI renders these values directly without additional logic.
 
 ---
 

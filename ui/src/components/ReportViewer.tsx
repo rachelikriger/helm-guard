@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { FileJson, Upload } from 'lucide-react';
 import { ReportSummary } from './ReportSummary';
 import { Filters } from './Filters';
 import { ResourceList } from './ResourceList';
-import type { HelmGuardReport, ResourceStatus, DiffAction } from '@/types/report';
+import type { ReportSchema, ResourceStatus, DiffAction } from '@/types/report';
 
 interface ReportViewerProps {
-  report: HelmGuardReport;
+  report: ReportSchema;
   onNewReport: () => void;
 }
 
@@ -16,50 +16,6 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
   const [selectedActions, setSelectedActions] = useState<DiffAction[]>([]);
 
   const namespaceResults = report.results;
-
-  const namespaceSummary = useMemo(() => {
-    const countByStatus = (status: ResourceStatus): number =>
-      namespaceResults.filter(result => result.status === status).length;
-    const countByAction = (action: DiffAction): number =>
-      namespaceResults
-        .flatMap(result => result.differences ?? [])
-        .filter(diff => diff.action === action).length;
-
-    return {
-      total: namespaceResults.length,
-      matched: countByStatus("MATCH"),
-      drifted: countByStatus("DRIFT"),
-      missingLive: countByStatus("MISSING_LIVE"),
-      missingHelm: countByStatus("MISSING_HELM"),
-      warnings: countByAction("WARN"),
-      failures:
-        countByAction("FAIL") +
-        countByStatus("MISSING_LIVE") +
-        countByStatus("MISSING_HELM"),
-    };
-  }, [namespaceResults]);
-
-  const includedKinds = useMemo(() => {
-    const kinds = new Set<string>();
-    for (const result of namespaceResults) {
-      const kind = getKindFromKey(result.resourceKey).trim();
-      if (kind) {
-        kinds.add(kind);
-      }
-    }
-    return Array.from(kinds).sort();
-  }, [namespaceResults]);
-
-  const includedResourceNames = useMemo(() => {
-    const names = new Set<string>();
-    for (const result of namespaceResults) {
-      const name = getNameFromKey(result.resourceKey).trim();
-      if (name) {
-        names.add(name);
-      }
-    }
-    return Array.from(names);
-  }, [namespaceResults]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,13 +57,12 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
             Summary
           </h2>
           <ReportSummary 
-            summary={namespaceSummary}
+            summary={report.summary}
             helmChart={report.config?.helmChart}
             namespace={report.config?.namespace}
             timestamp={report.timestamp}
-            includedKinds={includedKinds}
-            includedResourceNames={includedResourceNames}
-            namespaceResourceCount={namespaceResults.length}
+            selection={report.selection}
+            normalization={report.normalization}
           />
         </section>
 
@@ -152,12 +107,3 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
     </div>
   );
 }
-
-const getKindFromKey = (resourceKey: string): string => {
-  return resourceKey.split("/")[0] ?? "";
-};
-
-const getNameFromKey = (resourceKey: string): string => {
-  const parts = resourceKey.split("/");
-  return parts.length >= 3 ? parts[2] ?? "" : "";
-};

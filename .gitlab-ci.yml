@@ -1,9 +1,11 @@
-﻿stages:
+stages:
   - validate
 
 variables:
   HELM_GUARD_UI_URL: "https://helm-guard-ui.my-company.com"
   HELM_GUARD_CLI_IMAGE: "image-registry.openshift.svc:5000/<ns>/helm-guard-cli:stable"
+  # Optional: space-separated list of extra kinds to include (e.g. "Route ImageStream")
+  HELM_GUARD_INCLUDE_KINDS: ""
 
 helm_guard_validate:
   stage: validate
@@ -12,9 +14,9 @@ helm_guard_validate:
   script:
     - |
       echo ""
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo "🛡️  HELM-GUARD | Validation Started"
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "??????????????????????????????????????"
+      echo "???  HELM-GUARD | Validation Started"
+      echo "??????????????????????????????????????"
       echo ""
 
       set -- \
@@ -36,7 +38,13 @@ helm_guard_validate:
         done
       fi
 
-      echo "🔍 Comparing Helm desired state vs live OpenShift resources"
+      if [ -n "$HELM_GUARD_INCLUDE_KINDS" ]; then
+        for kind in $HELM_GUARD_INCLUDE_KINDS; do
+          set -- "$@" --include-kind "$kind"
+        done
+      fi
+
+      echo "?? Comparing Helm desired state vs live OpenShift resources"
       echo ""
       helm-guard "$@"
 
@@ -51,15 +59,15 @@ helm_guard_validate:
       REPORT_URL="${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/report.json"
 
       echo ""
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo "📄 HELM-GUARD | Report Ready"
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "??????????????????????????????????????"
+      echo "?? HELM-GUARD | Report Ready"
+      echo "??????????????????????????????????????"
       echo ""
-      echo "🔗 View validation report:"
-      echo "👉 ${HELM_GUARD_UI_URL}/?reportUrl=${REPORT_URL}"
+      echo "?? View validation report:"
+      echo "?? ${HELM_GUARD_UI_URL}/?reportUrl=${REPORT_URL}"
       echo ""
-      echo "ℹ️  Interpretation guide:"
-      echo "   ✅ No findings        → Safe to deploy"
-      echo "   ⚠️  WARN only         → Review recommended"
-      echo "   ❌ FAIL               → Deployment should be blocked"
+      echo "??  Interpretation guide:"
+      echo "   ? No findings         Safe to deploy"
+      echo "   ??  WARN only          Review recommended"
+      echo "   ? FAIL                Deployment should be blocked"
       echo ""

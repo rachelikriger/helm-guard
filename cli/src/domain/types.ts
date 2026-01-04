@@ -1,10 +1,16 @@
+import { REPORT_SCHEMA_VERSION } from "../../../shared/report-contract";
 import type {
   DiffAction as ReportDiffAction,
+  DiffItem,
+  DiffPath,
   HelmGuardReport,
   Mode,
   ReportConfig,
+  ReportNormalizationSummary,
+  ReportSchema,
+  ReportSelection,
   ReportSummary,
-  ResourceDiff,
+  ResourceIdentifier,
   ResourceResult,
   ResourceStatus,
 } from "../../../shared/report-contract";
@@ -75,19 +81,33 @@ export const RESOURCE_STATUS = {
    Comparison results
    ========================= */
 
-export type Difference = ResourceDiff;
+export type Difference = DiffItem;
 
 export type ComparisonResult = ResourceResult;
+
+export interface ComparisonOutput {
+  results: ComparisonResult[];
+  selection: ReportSelection;
+  normalization: ReportNormalizationSummary;
+}
 
 /* =========================
    Report (shared contract)
    ========================= */
 
 export type {
+  DiffItem,
+  DiffPath,
   HelmGuardReport,
+  ReportSchema,
   ReportConfig,
+  ReportNormalizationSummary,
+  ReportSelection,
   ReportSummary,
+  ResourceIdentifier,
   ResourceStatus,
   ReportDiffAction as DiffAction,
   Mode,
 };
+
+export { REPORT_SCHEMA_VERSION };

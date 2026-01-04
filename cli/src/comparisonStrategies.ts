@@ -1,13 +1,14 @@
 import { compareResources } from "./domain/comparator";
 import { renderHelmChart } from "./boundaries/helm";
 import { fetchLiveResources } from "./boundaries/openshift";
-import { ComparisonResult, HelmRenderOptions, MODE } from "./domain/types";
+import { ComparisonOutput, HelmRenderOptions, MODE } from "./domain/types";
 
 interface ComparisonParams {
   chart: string;
   namespace: string;
   strict: boolean;
   helmRenderOptions: HelmRenderOptions;
+  includeKinds?: string[];
 }
 
 /**
@@ -15,7 +16,7 @@ interface ComparisonParams {
  */
 export const runBootstrapComparison = (
   params: ComparisonParams
-): ComparisonResult[] => {
+): ComparisonOutput => {
   const helmResources = renderHelmChart(
     params.chart,
     params.namespace,
@@ -27,7 +28,8 @@ export const runBootstrapComparison = (
   return compareResources(
     helmResources,
     liveResources,
-    params.strict
+    params.strict,
+    params.includeKinds ?? []
   );
 };
 
@@ -37,6 +39,6 @@ export const runBootstrapComparison = (
  */
 export const runHelmManagedComparison = (
   _params: ComparisonParams
-): ComparisonResult[] => {
+): ComparisonOutput => {
   throw new Error(`${MODE.HELM_MANAGED} mode is not implemented yet`);
 };

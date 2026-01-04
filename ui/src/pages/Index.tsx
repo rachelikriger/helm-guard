@@ -3,23 +3,25 @@ import { useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { FileUploader } from '@/components/FileUploader';
 import { ReportViewer } from '@/components/ReportViewer';
-import type { HelmGuardReport } from '@/types/report';
+import type { ReportSchema } from '@/types/report';
 
-function isValidReport(report: unknown): report is HelmGuardReport {
+function isValidReport(report: unknown): report is ReportSchema {
   return Boolean(
     report &&
     typeof report === 'object' &&
-    (report as HelmGuardReport).summary &&
-    Array.isArray((report as HelmGuardReport).results)
+    (report as ReportSchema).summary &&
+    (report as ReportSchema).selection &&
+    (report as ReportSchema).normalization &&
+    Array.isArray((report as ReportSchema).results)
   );
 }
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const [report, setReport] = useState<HelmGuardReport | null>(null);
+  const [report, setReport] = useState<ReportSchema | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const handleReportLoaded = (loadedReport: HelmGuardReport) => {
+  const handleReportLoaded = (loadedReport: ReportSchema) => {
     setLoadError(null);
     setReport(loadedReport);
   };
@@ -46,9 +48,9 @@ const Index = () => {
           throw new Error(`Failed to fetch report (${response.status})`);
         }
 
-        const data = await response.json() as HelmGuardReport;
+        const data = await response.json() as ReportSchema;
         if (!isValidReport(data)) {
-          throw new Error('Invalid report format: missing summary or results array');
+          throw new Error('Invalid report format: missing required sections');
         }
 
         if (isMounted) {
