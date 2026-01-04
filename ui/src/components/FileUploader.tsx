@@ -1,19 +1,17 @@
 import { useState, useCallback, useRef } from 'react';
 import { Upload, FileJson, AlertCircle } from 'lucide-react';
-import type { ReportSchema } from '@/types/report';
+import type { HelmGuardReport } from '@/types/report';
 
 interface FileUploaderProps {
-  onReportLoaded: (report: ReportSchema) => void;
+  onReportLoaded: (report: HelmGuardReport) => void;
 }
 
-function isValidReport(report: unknown): report is ReportSchema {
+function isValidReport(report: unknown): report is HelmGuardReport {
   return Boolean(
     report &&
     typeof report === 'object' &&
-    (report as ReportSchema).summary &&
-    (report as ReportSchema).selection &&
-    (report as ReportSchema).normalization &&
-    Array.isArray((report as ReportSchema).results)
+    (report as HelmGuardReport).summary &&
+    Array.isArray((report as HelmGuardReport).results)
   );
 }
 
@@ -34,11 +32,11 @@ export function FileUploader({ onReportLoaded }: FileUploaderProps) {
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        const report = JSON.parse(content) as ReportSchema;
+        const report = JSON.parse(content) as HelmGuardReport;
 
         // Validate basic structure
         if (!isValidReport(report)) {
-          setError('Invalid report format: missing required sections');
+          setError('Invalid report format: missing summary or results array');
           return;
         }
         

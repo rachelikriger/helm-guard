@@ -22,9 +22,7 @@ export function ResourceList({
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchesSearch = formatResourceIdentifier(result.resource)
-          .toLowerCase()
-          .includes(query);
+        const matchesSearch = result.resourceKey.toLowerCase().includes(query);
         
         if (!matchesSearch) return false;
       }
@@ -81,7 +79,7 @@ export function ResourceList({
       <div className="space-y-2">
         {filteredResults.map((result, index) => (
           <ResourceCard 
-            key={formatResourceIdentifier(result.resource)}
+            key={result.resourceKey}
             resource={result}
             index={index}
             namespaceFallback={namespaceLabel}
@@ -91,11 +89,3 @@ export function ResourceList({
     </div>
   );
 }
-
-const formatResourceIdentifier = (resource: {
-  kind: string;
-  namespace: string;
-  name: string;
-}): string => {
-  return `${resource.kind}/${resource.namespace}/${resource.name}`;
-};

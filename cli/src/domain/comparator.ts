@@ -1,25 +1,19 @@
 import { diff, Diff } from "deep-diff";
 import {
-  ComparisonOutput,
   ComparisonResult,
   DIFF_ACTION,
+  DiffAction as ReportDiffAction,
   DiffActionInternal,
-  DiffPath,
   K8sResource,
   RESOURCE_STATUS,
-  ResourceIdentifier,
 } from "./types";
 import { normalize } from "./normalizer";
-import { applyPlatformDefaults } from "./applyPlatformDefaults";
-import { createNormalizationTracker } from "./platformDefaultRules";
 export const compareResources = (
   helm: K8sResource[],
   live: K8sResource[],
-  strict: boolean,
-  includeKinds: string[] = []
-): ComparisonOutput => {
+  strict: boolean
+): ComparisonResult[] => {
   const results: ComparisonResult[] = [];
-  const normalizationTracker = createNormalizationTracker();
 
   const helmResources = helm
     .map(normalize)
@@ -28,44 +22,26 @@ export const compareResources = (
     .map(normalize)
     .filter(resource => hasNamespace(resource.metadata.namespace));
 
-  const helmKinds = uniqueKinds(helmResources);
-  const additionalKinds = normalizeKindList(includeKinds);
-  const comparedKinds = mergeKinds(helmKinds, additionalKinds);
-
-  const filteredLiveResources = liveResources.filter(resource =>
-    comparedKinds.includes(resource.kind.trim())
-  );
-
   const helmMap = mapByKey(helmResources);
-  const liveMap = mapByKey(filteredLiveResources);
+  const liveMap = mapByKey(liveResources);
 
   for (const [key, helmRes] of helmMap) {
     const liveRes = liveMap.get(key);
     if (!liveRes) {
       results.push({
-        resource: buildResourceIdentifier(helmRes),
+        resourceKey: key,
         status: RESOURCE_STATUS.MISSING_LIVE,
         differences: []
       });
       continue;
     }
 
-    const normalizedPair = applyPlatformDefaults(
-      helmRes,
-      liveRes,
-      normalizationTracker
-    );
-
-    const diffs =
-      diff<K8sResource, K8sResource>(
-        normalizedPair.helm,
-        normalizedPair.live
-      ) ?? [];
+    const diffs = diff<K8sResource, K8sResource>(helmRes, liveRes) ?? [];
     const differences = diffs
       .map(d => {
-        const path = toDiffPath(d);
+        const path = formatDiffPath(d.path);
         const { helmValue, liveValue } = extractDiffValues(d);
-        const action = classifyDiff(strict);
+        const action = classifyDiff(path, strict);
         return {
           path,
           helmValue,
@@ -76,7 +52,7 @@ export const compareResources = (
       .filter(isReportAction);
 
     results.push({
-      resource: buildResourceIdentifier(helmRes),
+      resourceKey: key,
       status: differences.length ? RESOURCE_STATUS.DRIFT : RESOURCE_STATUS.MATCH,
       differences
     });
@@ -84,25 +60,15 @@ export const compareResources = (
 
   for (const key of liveMap.keys()) {
     if (!helmMap.has(key)) {
-      const liveResource = liveMap.get(key);
-      if (!liveResource) continue;
       results.push({
-        resource: buildResourceIdentifier(liveResource),
+        resourceKey: key,
         status: RESOURCE_STATUS.MISSING_HELM,
         differences: []
       });
     }
   }
 
-  return {
-    results,
-    selection: {
-      helmKinds,
-      additionalKinds,
-      comparedKinds,
-    },
-    normalization: normalizationTracker.summary,
-  };
+  return results;
 };
 
 const extractDiffValues = (diffEntry: Diff<K8sResource, K8sResource>): {
@@ -131,7 +97,7 @@ const extractArraySide = (
   return undefined;
 };
 
-const classifyDiff = (strict: boolean): DiffActionInternal => {
+const classifyDiff = (path: string, strict: boolean): DiffActionInternal => {
   if (!strict) return DIFF_ACTION.WARN;
   return DIFF_ACTION.FAIL;
 };
@@ -141,6 +107,11 @@ type ReportableAction = Exclude<DiffActionInternal, typeof DIFF_ACTION.IGNORE>;
 const isReportAction = <T extends { action: DiffActionInternal }>(
   diff: T
 ): diff is T & { action: ReportableAction } => diff.action !== DIFF_ACTION.IGNORE;
+
+const formatDiffPath = (path: Array<string | number> | undefined): string => {
+  if (!Array.isArray(path)) return "";
+  return path.map(segment => String(segment)).join(".");
+};
 
 const mapByKey = (resources: K8sResource[]): Map<string, K8sResource> => {
   return new Map(resources.map(r => [buildResourceKey(r), r]));
@@ -153,55 +124,6 @@ const buildResourceKey = (resource: K8sResource): string => {
   return `${kind}/${namespace}/${name}`;
 };
 
-const buildResourceIdentifier = (resource: K8sResource): ResourceIdentifier => {
-  return {
-    kind: resource.kind.trim(),
-    namespace: resource.metadata.namespace?.trim() ?? "",
-    name: resource.metadata.name.trim(),
-  };
-};
-
 const hasNamespace = (namespace: string | undefined): boolean => {
   return typeof namespace === "string" && namespace.trim().length > 0;
-};
-
-const uniqueKinds = (resources: K8sResource[]): string[] => {
-  const kinds = new Set<string>();
-  for (const resource of resources) {
-    const kind = resource.kind.trim();
-    if (kind) kinds.add(kind);
-  }
-  return Array.from(kinds).sort();
-};
-
-const normalizeKindList = (kinds: string[]): string[] => {
-  const normalized = kinds
-    .map(kind => kind.trim())
-    .filter(kind => kind.length > 0);
-  return Array.from(new Set(normalized)).sort();
-};
-
-const mergeKinds = (helmKinds: string[], additionalKinds: string[]): string[] => {
-  const merged = new Set<string>(helmKinds);
-  additionalKinds.forEach(kind => merged.add(kind));
-  return Array.from(merged).sort();
-};
-
-const toDiffPath = (
-  diffEntry: Diff<K8sResource, K8sResource>
-): DiffPath => {
-  const path = Array.isArray(diffEntry.path) ? diffEntry.path : [];
-  type DiffPathSegment = DiffPath[number];
-  const segments: DiffPathSegment[] = path.map(segment => {
-    if (typeof segment === "number") {
-      return { type: "index", index: segment };
-    }
-    return { type: "field", name: String(segment) };
-  });
-
-  if (diffEntry.kind === "A" && typeof diffEntry.index === "number") {
-    segments.push({ type: "index", index: diffEntry.index });
-  }
-
-  return segments;
 };

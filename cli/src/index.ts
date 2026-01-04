@@ -4,11 +4,7 @@ import { MODE, Mode } from "./domain/types";
 import type { ReportConfig } from "./domain/types";
 import { printReport } from "./boundaries/reporter";
 import { buildReport } from "./domain/buildReport";
-import {
-  validateHelmRenderOptions,
-  validateIncludeKinds,
-  validateInputs,
-} from "./validation/cli";
+import { validateHelmRenderOptions, validateInputs } from "./validation/cli";
 import { runBootstrapComparison, runHelmManagedComparison } from "./comparisonStrategies";
 
 type CliOptions = {
@@ -18,7 +14,6 @@ type CliOptions = {
   strict: boolean;
   release?: string;
   values: string[];
-  includeKinds: string[];
   output?: string;
 };
 
@@ -37,12 +32,6 @@ program
     (value: string, previous: string[]) => [...previous, value],
     []
   )
-  .option(
-    "--include-kind <kind>",
-    "Include additional resource kinds beyond Helm-rendered kinds (repeatable)",
-    (value: string, previous: string[]) => [...previous, value],
-    []
-  )
   .option("--output <file>", "Write JSON report to file");
 
 const formatErrorMessage = (message: string): string => {
@@ -58,16 +47,14 @@ try {
 
   const mode = validateInputs(opts.chart, opts.namespace, opts.mode);
   const helmRenderOptions = validateHelmRenderOptions(opts.release, opts.values);
-  const includeKinds = validateIncludeKinds(opts.includeKinds);
   const runComparison =
     mode === MODE.BOOTSTRAP ? runBootstrapComparison : runHelmManagedComparison;
 
-  const comparison = runComparison({
+  const results = runComparison({
     chart: opts.chart,
     namespace: opts.namespace,
     strict: opts.strict,
     helmRenderOptions,
-    includeKinds,
   });
 
   if (opts.output) {
@@ -86,15 +73,11 @@ try {
       reportConfig.valuesFiles = helmRenderOptions.valuesFiles;
     }
 
-    if (includeKinds.length > 0) {
-      reportConfig.includeKinds = includeKinds;
-    }
-
-    const report = buildReport(comparison, reportConfig);
+    const report = buildReport(results, reportConfig);
     fs.writeFileSync(opts.output, JSON.stringify(report, null, 2));
   }
 
-  const exitCode = printReport(comparison.results, opts.namespace);
+  const exitCode = printReport(results, opts.namespace);
   process.exit(exitCode);
 } catch (err) {
   const message = err instanceof Error ? err.message : String(err);

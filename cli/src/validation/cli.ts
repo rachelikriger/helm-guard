@@ -49,18 +49,3 @@ export const validateHelmRenderOptions = (
 
   return options;
 };
-
-export const validateIncludeKinds = (includeKinds?: string[]): string[] => {
-  if (!includeKinds || includeKinds.length === 0) return [];
-
-  const normalized: string[] = [];
-
-  for (const kind of includeKinds) {
-    if (!kind || !kind.trim()) {
-      throw new Error("Invalid CLI input: include kind must be a non-empty string");
-    }
-    normalized.push(kind.trim());
-  }
-
-  return Array.from(new Set(normalized)).sort();
-};

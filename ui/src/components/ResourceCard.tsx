@@ -20,8 +20,8 @@ export function ResourceCard({
   const hasDiffs = diffCount > 0;
 
   const parsed = useMemo(
-    () => normalizeIdentifier(resource.resource, namespaceFallback),
-    [resource.resource, namespaceFallback]
+    () => parseResourceKey(resource.resourceKey, namespaceFallback),
+    [resource.resourceKey, namespaceFallback]
   );
 
   return (
@@ -84,14 +84,22 @@ export function ResourceCard({
   );
 }
 
-const normalizeIdentifier = (
-  resource: { kind: string; namespace: string; name: string },
+const parseResourceKey = (
+  resourceKey: string,
   namespaceFallback?: string
 ): { kind: string; namespace?: string; name: string } => {
-  const namespace = resource.namespace?.trim() || namespaceFallback?.trim();
+  const parts = resourceKey.split("/");
+  if (parts.length >= 3) {
+    return {
+      kind: parts[0]?.trim() ?? "",
+      namespace: parts[1]?.trim(),
+      name: parts[2]?.trim() ?? "",
+    };
+  }
+
   return {
-    kind: resource.kind.trim(),
-    namespace,
-    name: resource.name.trim(),
+    kind: parts[0]?.trim() ?? "",
+    namespace: namespaceFallback?.trim(),
+    name: parts[1]?.trim() ?? resourceKey.trim(),
   };
 };

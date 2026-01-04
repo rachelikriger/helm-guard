@@ -8,15 +8,16 @@ import {
   XCircle 
 } from 'lucide-react';
 import { SummaryCard } from './SummaryCard';
-import type { ReportNormalizationSummary, ReportSelection, ReportSummary as ReportSummaryType } from '@/types/report';
+import type { ReportSummary as ReportSummaryType } from '@/types/report';
 
 interface ReportSummaryProps {
   summary: ReportSummaryType;
   helmChart?: string;
   namespace?: string;
   timestamp?: string;
-  selection: ReportSelection;
-  normalization: ReportNormalizationSummary;
+  includedKinds?: string[];
+  includedResourceNames?: string[];
+  namespaceResourceCount?: number;
 }
 
 const formatKindList = (kinds: string[]): string => {
@@ -28,13 +29,23 @@ const formatKindList = (kinds: string[]): string => {
     : visible.join(", ");
 };
 
+const formatResourceNameList = (names: string[], maxVisible = 3): string => {
+  if (names.length === 0) return "None detected";
+  const visible = names.slice(0, maxVisible);
+  const remaining = names.length - visible.length;
+  return remaining > 0
+    ? `${visible.join(", ")} (+${remaining} more)`
+    : visible.join(", ");
+};
+
 export function ReportSummary({
   summary,
   helmChart,
   namespace,
   timestamp,
-  selection,
-  normalization,
+  includedKinds = [],
+  includedResourceNames = [],
+  namespaceResourceCount = summary.total,
 }: ReportSummaryProps) {
   const summaryMessage =
     summary.failures > 0
@@ -62,9 +73,17 @@ export function ReportSummary({
               Generated: <span className="text-foreground">{new Date(timestamp).toLocaleString()}</span>
             </span>
           )}
-          {selection.comparedKinds.length > 0 && (
+          {includedKinds.length > 0 && (
             <span>
-              Kinds: <span className="text-foreground">{formatKindList(selection.comparedKinds)}</span>
+              Kinds: <span className="text-foreground">{formatKindList(includedKinds)}</span>
+            </span>
+          )}
+          {includedResourceNames.length > 0 && (
+            <span>
+              Resource names:{" "}
+              <span className="text-foreground">
+                {formatResourceNameList(includedResourceNames)}
+              </span>
             </span>
           )}
         </div>
@@ -74,19 +93,13 @@ export function ReportSummary({
         <div className="text-xs text-muted-foreground">
           Compared Helm-rendered manifests to live OpenShift resources in the target namespace.
         </div>
-        {normalization.totalSuppressed > 0 && (
-          <div className="text-xs text-muted-foreground">
-            Suppressed {normalization.totalSuppressed} defaulted fields before diffing
-            ({formatNormalizationRules(normalization)}).
-          </div>
-        )}
         <div className="text-xs text-muted-foreground uppercase tracking-wider">
           Resource Coverage
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <SummaryCard
           label="Resources compared"
-          value={summary.total}
+          value={namespaceResourceCount}
           icon={<Box className="w-4 h-4" />}
           description="Namespace resources compared (Helm render + live)."
           variant="default"
@@ -149,15 +162,3 @@ export function ReportSummary({
     </div>
   );
 }
-
-const formatNormalizationRules = (
-  normalization: ReportNormalizationSummary
-): string => {
-  const applied = normalization.rules
-    .filter(rule => rule.suppressedCount > 0)
-    .map(rule => rule.rule.id);
-
-  if (applied.length === 0) return "no defaults suppressed";
-  if (applied.length <= 2) return applied.join(", ");
-  return `${applied.slice(0, 2).join(", ")} +${applied.length - 2} more`;
-};
