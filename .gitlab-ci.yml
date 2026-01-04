@@ -36,6 +36,12 @@ helm_guard_validate:
         done
       fi
 
+      if [ -n "$HELM_SET_VALUES" ]; then
+        for set_value in $HELM_SET_VALUES; do
+          set -- "$@" --set "$set_value"
+        done
+      fi
+
       echo "🔍 Comparing Helm desired state vs live OpenShift resources"
       echo ""
       helm-guard "$@"

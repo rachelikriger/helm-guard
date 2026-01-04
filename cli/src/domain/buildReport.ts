@@ -3,7 +3,6 @@ import {
   CountableAction,
   DIFF_ACTION,
   HelmGuardReport,
-  RESOURCE_STATUS,
   ReportConfig,
   ResourceStatus,
 } from "./types";
@@ -14,15 +13,15 @@ export const buildReport = (
 ): HelmGuardReport => {
   const summary = {
     total: results.length,
-    matched: countByStatus(results, RESOURCE_STATUS.MATCH),
-    drifted: countByStatus(results, RESOURCE_STATUS.DRIFT),
-    missingLive: countByStatus(results, RESOURCE_STATUS.MISSING_LIVE),
-    missingHelm: countByStatus(results, RESOURCE_STATUS.MISSING_HELM),
+    matched: countByStatus(results, ResourceStatus.MATCH),
+    drifted: countByStatus(results, ResourceStatus.DRIFT),
+    missingLive: countByStatus(results, ResourceStatus.MISSING_LIVE),
+    missingHelm: countByStatus(results, ResourceStatus.MISSING_HELM),
     warnings: countByAction(results, DIFF_ACTION.WARN),
     failures:
       countByAction(results, DIFF_ACTION.FAIL) +
-      countByStatus(results, RESOURCE_STATUS.MISSING_LIVE) +
-      countByStatus(results, RESOURCE_STATUS.MISSING_HELM),
+      countByStatus(results, ResourceStatus.MISSING_LIVE) +
+      countByStatus(results, ResourceStatus.MISSING_HELM),
   };
 
   return {

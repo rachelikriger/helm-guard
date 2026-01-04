@@ -1,24 +1,43 @@
 export type Mode = "bootstrap" | "helm-managed";
 
-export type DiffAction = "WARN" | "FAIL";
+export type K8sKind = string;
 
-export type ResourceStatus =
-  | "MATCH"
-  | "DRIFT"
-  | "MISSING_LIVE"
-  | "MISSING_HELM";
+export enum DiffAction {
+  WARN = "WARN",
+  FAIL = "FAIL",
+}
 
-export interface ResourceDiff {
-  path: string;
+export enum ResourceStatus {
+  MATCH = "MATCH",
+  DRIFT = "DRIFT",
+  MISSING_LIVE = "MISSING_LIVE",
+  MISSING_HELM = "MISSING_HELM",
+}
+
+export type DiffPath = string;
+
+export interface DiffItem {
+  path: DiffPath;
   helmValue?: unknown;
   liveValue?: unknown;
   action: DiffAction;
 }
 
+export interface ResourceIdentifier {
+  kind: K8sKind;
+  namespace: string;
+  name: string;
+}
+
 export interface ResourceResult {
   resourceKey: string;
   status: ResourceStatus;
-  differences: ResourceDiff[];
+  differences: DiffItem[];
+}
+
+export interface NormalizationRule {
+  path: DiffPath;
+  defaultValue: unknown;
 }
 
 export interface ReportConfig {
@@ -28,6 +47,7 @@ export interface ReportConfig {
   mode: Mode;
   releaseName?: string;
   valuesFiles?: string[];
+  whitelistedKinds?: K8sKind[];
 }
 
 export interface ReportSummary {
@@ -40,9 +60,11 @@ export interface ReportSummary {
   failures: number;
 }
 
-export interface HelmGuardReport {
+export interface ReportSchema {
   timestamp: string;
   config: ReportConfig;
   summary: ReportSummary;
   results: ResourceResult[];
 }
+
+export type HelmGuardReport = ReportSchema;

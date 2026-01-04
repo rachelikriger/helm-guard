@@ -2,12 +2,12 @@ import { diff, Diff } from "deep-diff";
 import {
   ComparisonResult,
   DIFF_ACTION,
-  DiffAction as ReportDiffAction,
   DiffActionInternal,
   K8sResource,
-  RESOURCE_STATUS,
+  ResourceStatus,
 } from "./types";
 import { normalize } from "./normalizer";
+import { shouldSuppressDiff } from "./applyPlatformDefaults";
 export const compareResources = (
   helm: K8sResource[],
   live: K8sResource[],
@@ -25,12 +25,19 @@ export const compareResources = (
   const helmMap = mapByKey(helmResources);
   const liveMap = mapByKey(liveResources);
 
-  for (const [key, helmRes] of helmMap) {
+  const helmKeys = Array.from(helmMap.keys()).sort((a, b) => a.localeCompare(b));
+  const liveKeys = Array.from(liveMap.keys()).sort((a, b) => a.localeCompare(b));
+
+  for (const key of helmKeys) {
+    const helmRes = helmMap.get(key);
+    if (!helmRes) {
+      continue;
+    }
     const liveRes = liveMap.get(key);
     if (!liveRes) {
       results.push({
         resourceKey: key,
-        status: RESOURCE_STATUS.MISSING_LIVE,
+        status: ResourceStatus.MISSING_LIVE,
         differences: []
       });
       continue;
@@ -41,6 +48,14 @@ export const compareResources = (
       .map(d => {
         const path = formatDiffPath(d.path);
         const { helmValue, liveValue } = extractDiffValues(d);
+        if (shouldSuppressDiff(path, helmValue, liveValue)) {
+          return {
+            path,
+            helmValue,
+            liveValue,
+            action: DIFF_ACTION.IGNORE
+          };
+        }
         const action = classifyDiff(path, strict);
         return {
           path,
@@ -49,20 +64,21 @@ export const compareResources = (
           action
         };
       })
-      .filter(isReportAction);
+      .filter(isReportAction)
+      .sort((a, b) => a.path.localeCompare(b.path));
 
     results.push({
       resourceKey: key,
-      status: differences.length ? RESOURCE_STATUS.DRIFT : RESOURCE_STATUS.MATCH,
+      status: differences.length ? ResourceStatus.DRIFT : ResourceStatus.MATCH,
       differences
     });
   }
 
-  for (const key of liveMap.keys()) {
+  for (const key of liveKeys) {
     if (!helmMap.has(key)) {
       results.push({
         resourceKey: key,
-        status: RESOURCE_STATUS.MISSING_HELM,
+        status: ResourceStatus.MISSING_HELM,
         differences: []
       });
     }

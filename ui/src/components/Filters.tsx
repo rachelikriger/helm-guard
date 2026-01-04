@@ -1,44 +1,47 @@
-import { Search, X } from 'lucide-react';
-import type { ResourceStatus, DiffAction } from '@/types/report';
+import { X } from 'lucide-react';
+import { DiffAction, ResourceStatus } from '@/types/report';
 
 interface FiltersProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
   selectedStatuses: ResourceStatus[];
   onStatusChange: (statuses: ResourceStatus[]) => void;
   selectedActions: DiffAction[];
   onActionChange: (actions: DiffAction[]) => void;
+  onClearAll: () => void;
 }
 
-const allStatuses: ResourceStatus[] = ['MATCH', 'DRIFT', 'MISSING_LIVE', 'MISSING_HELM'];
-const allActions: DiffAction[] = ['WARN', 'FAIL'];
+const allStatuses: ResourceStatus[] = [
+  ResourceStatus.MATCH,
+  ResourceStatus.DRIFT,
+  ResourceStatus.MISSING_LIVE,
+  ResourceStatus.MISSING_HELM,
+];
+const allActions: DiffAction[] = [DiffAction.WARN, DiffAction.FAIL];
 
 const statusLabels: Record<ResourceStatus, string> = {
-  MATCH: 'Match',
-  DRIFT: 'Drift',
-  MISSING_LIVE: 'Missing Live',
-  MISSING_HELM: 'Missing Helm',
+  [ResourceStatus.MATCH]: 'Match',
+  [ResourceStatus.DRIFT]: 'Drift',
+  [ResourceStatus.MISSING_LIVE]: 'Missing Live',
+  [ResourceStatus.MISSING_HELM]: 'Missing Helm',
 };
 
 const statusStyles: Record<ResourceStatus, string> = {
-  MATCH: 'border-status-match/30 bg-status-match text-status-match',
-  DRIFT: 'border-status-drift/30 bg-status-drift text-status-drift',
-  MISSING_LIVE: 'border-status-missing-live/30 bg-status-missing-live text-status-missing-live',
-  MISSING_HELM: 'border-status-missing-helm/30 bg-status-missing-helm text-status-missing-helm',
+  [ResourceStatus.MATCH]: 'border-status-match/30 bg-status-match text-status-match',
+  [ResourceStatus.DRIFT]: 'border-status-drift/30 bg-status-drift text-status-drift',
+  [ResourceStatus.MISSING_LIVE]: 'border-status-missing-live/30 bg-status-missing-live text-status-missing-live',
+  [ResourceStatus.MISSING_HELM]: 'border-status-missing-helm/30 bg-status-missing-helm text-status-missing-helm',
 };
 
 const actionStyles: Record<DiffAction, string> = {
-  WARN: 'border-action-warn/30 bg-action-warn text-action-warn',
-  FAIL: 'border-action-fail/30 bg-action-fail text-action-fail',
+  [DiffAction.WARN]: 'border-action-warn/30 bg-action-warn text-action-warn',
+  [DiffAction.FAIL]: 'border-action-fail/30 bg-action-fail text-action-fail',
 };
 
 export function Filters({
-  searchQuery,
-  onSearchChange,
   selectedStatuses,
   onStatusChange,
   selectedActions,
   onActionChange,
+  onClearAll,
 }: FiltersProps) {
   const toggleStatus = (status: ResourceStatus) => {
     if (selectedStatuses.includes(status)) {
@@ -56,37 +59,14 @@ export function Filters({
     }
   };
 
-  const hasActiveFilters = searchQuery || selectedStatuses.length > 0 || selectedActions.length > 0;
+  const hasActiveFilters = selectedStatuses.length > 0 || selectedActions.length > 0;
 
   const clearAll = () => {
-    onSearchChange('');
-    onStatusChange([]);
-    onActionChange([]);
+    onClearAll();
   };
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search by resource name, kind, or namespace..."
-          className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => onSearchChange('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-
-      {/* Filter Pills */}
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-xs text-muted-foreground uppercase tracking-wider">Status:</span>
         <div className="flex flex-wrap gap-2">

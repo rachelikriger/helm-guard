@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { FileJson, Upload } from 'lucide-react';
+import { FileJson, Search, Upload } from 'lucide-react';
 import { ReportSummary } from './ReportSummary';
 import { Filters } from './Filters';
 import { ResourceList } from './ResourceList';
-import type { HelmGuardReport, ResourceStatus, DiffAction } from '@/types/report';
+import { DiffAction, ResourceStatus } from '@/types/report';
+import type { HelmGuardReport, ResourceResult } from '@/types/report';
 
 interface ReportViewerProps {
   report: HelmGuardReport;
@@ -11,55 +12,76 @@ interface ReportViewerProps {
 }
 
 export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [nameFilter, setNameFilter] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<ResourceStatus[]>([]);
   const [selectedActions, setSelectedActions] = useState<DiffAction[]>([]);
 
   const namespaceResults = report.results;
+  const filteredResults = useMemo(
+    () =>
+      filterResults(
+        namespaceResults,
+        nameFilter,
+        selectedStatuses,
+        selectedActions
+      ),
+    [namespaceResults, nameFilter, selectedStatuses, selectedActions]
+  );
+
+  const isFiltered =
+    nameFilter.trim().length > 0 ||
+    selectedStatuses.length > 0 ||
+    selectedActions.length > 0;
+
+  const clearAllFilters = () => {
+    setNameFilter('');
+    setSelectedStatuses([]);
+    setSelectedActions([]);
+  };
 
   const namespaceSummary = useMemo(() => {
     const countByStatus = (status: ResourceStatus): number =>
-      namespaceResults.filter(result => result.status === status).length;
+      filteredResults.filter(result => result.status === status).length;
     const countByAction = (action: DiffAction): number =>
-      namespaceResults
+      filteredResults
         .flatMap(result => result.differences ?? [])
         .filter(diff => diff.action === action).length;
 
     return {
-      total: namespaceResults.length,
-      matched: countByStatus("MATCH"),
-      drifted: countByStatus("DRIFT"),
-      missingLive: countByStatus("MISSING_LIVE"),
-      missingHelm: countByStatus("MISSING_HELM"),
-      warnings: countByAction("WARN"),
+      total: filteredResults.length,
+      matched: countByStatus(ResourceStatus.MATCH),
+      drifted: countByStatus(ResourceStatus.DRIFT),
+      missingLive: countByStatus(ResourceStatus.MISSING_LIVE),
+      missingHelm: countByStatus(ResourceStatus.MISSING_HELM),
+      warnings: countByAction(DiffAction.WARN),
       failures:
-        countByAction("FAIL") +
-        countByStatus("MISSING_LIVE") +
-        countByStatus("MISSING_HELM"),
+        countByAction(DiffAction.FAIL) +
+        countByStatus(ResourceStatus.MISSING_LIVE) +
+        countByStatus(ResourceStatus.MISSING_HELM),
     };
-  }, [namespaceResults]);
+  }, [filteredResults]);
 
   const includedKinds = useMemo(() => {
     const kinds = new Set<string>();
-    for (const result of namespaceResults) {
+    for (const result of filteredResults) {
       const kind = getKindFromKey(result.resourceKey).trim();
       if (kind) {
         kinds.add(kind);
       }
     }
     return Array.from(kinds).sort();
-  }, [namespaceResults]);
+  }, [filteredResults]);
 
   const includedResourceNames = useMemo(() => {
     const names = new Set<string>();
-    for (const result of namespaceResults) {
+    for (const result of filteredResults) {
       const name = getNameFromKey(result.resourceKey).trim();
       if (name) {
         names.add(name);
       }
     }
     return Array.from(names);
-  }, [namespaceResults]);
+  }, [filteredResults]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -95,6 +117,35 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
 
       {/* Content */}
       <main className="container py-8 space-y-8">
+        {/* Name Filter */}
+        <section>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={nameFilter}
+                onChange={(e) => setNameFilter(e.target.value)}
+                placeholder="Filter by service or resource name..."
+                className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+              />
+            </div>
+            {isFiltered && (
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                <span>
+                  Filtered view — showing {filteredResults.length} of {namespaceResults.length} resources
+                </span>
+                <button
+                  onClick={clearAllFilters}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Summary Section */}
         <section>
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
@@ -107,7 +158,7 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
             timestamp={report.timestamp}
             includedKinds={includedKinds}
             includedResourceNames={includedResourceNames}
-            namespaceResourceCount={namespaceResults.length}
+            namespaceResourceCount={filteredResults.length}
           />
         </section>
 
@@ -117,12 +168,11 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
             Filters
           </h2>
           <Filters
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
             selectedStatuses={selectedStatuses}
             onStatusChange={setSelectedStatuses}
             selectedActions={selectedActions}
             onActionChange={setSelectedActions}
+            onClearAll={clearAllFilters}
           />
         </section>
 
@@ -132,10 +182,8 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
             Resources
           </h2>
           <ResourceList
-            namespaceResults={namespaceResults}
-            searchQuery={searchQuery}
-            selectedStatuses={selectedStatuses}
-            selectedActions={selectedActions}
+            namespaceResults={filteredResults}
+            totalResults={namespaceResults.length}
             namespaceLabel={report.config?.namespace}
           />
         </section>
@@ -160,4 +208,39 @@ const getKindFromKey = (resourceKey: string): string => {
 const getNameFromKey = (resourceKey: string): string => {
   const parts = resourceKey.split("/");
   return parts.length >= 3 ? parts[2] ?? "" : "";
+};
+
+const filterResults = (
+  results: ResourceResult[],
+  nameFilter: string,
+  selectedStatuses: ResourceStatus[],
+  selectedActions: DiffAction[]
+): ResourceResult[] => {
+  const query = nameFilter.trim().toLowerCase();
+  return results.filter(result => {
+    if (query) {
+      const name = getNameFromKey(result.resourceKey).toLowerCase();
+      if (!name.includes(query)) {
+        return false;
+      }
+    }
+
+    if (selectedStatuses.length > 0 && !selectedStatuses.includes(result.status)) {
+      return false;
+    }
+
+    if (selectedActions.length > 0) {
+      if (!result.differences || result.differences.length === 0) {
+        return false;
+      }
+      const hasAction = result.differences.some(diff =>
+        selectedActions.includes(diff.action)
+      );
+      if (!hasAction) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 };

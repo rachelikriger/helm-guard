@@ -1,19 +1,27 @@
-import type {
+import {
   DiffAction,
+  ResourceStatus,
+} from "../../../shared/report-contract";
+import type {
+  DiffItem,
+  DiffPath,
   HelmGuardReport,
+  ReportSchema,
   ReportConfig,
   ReportSummary,
-  ResourceDiff,
+  ResourceIdentifier,
   ResourceResult,
-  ResourceStatus,
 } from "../../../shared/report-contract";
 
 export type {
-  DiffAction,
+  DiffItem,
+  DiffPath,
   HelmGuardReport,
+  ReportSchema,
   ReportConfig,
   ReportSummary,
-  ResourceDiff,
+  ResourceIdentifier,
   ResourceResult,
-  ResourceStatus,
 };
+
+export { DiffAction, ResourceStatus };

@@ -4,29 +4,34 @@
     "helmChart": "./charts/my-app",
     "namespace": "prep",
     "strictMode": false,
-    "mode": "bootstrap"
+    "mode": "bootstrap",
+    "whitelistedKinds": [
+      "ConfigMap",
+      "Deployment",
+      "Service"
+    ]
   },
   "summary": {
-    "total": 3,
-    "matched": 1,
-    "drifted": 1,
+    "total": 6,
+    "matched": 2,
+    "drifted": 2,
     "missingLive": 1,
-    "missingHelm": 0,
+    "missingHelm": 1,
     "warnings": 1,
-    "failures": 1
+    "failures": 3
   },
   "results": [
     {
-      "resourceKey": "Deployment/prep/my-app",
+      "resourceKey": "Deployment/prep/payments-api",
       "status": "MATCH",
       "differences": []
     },
     {
-      "resourceKey": "Service/prep/my-app",
+      "resourceKey": "Service/prep/payments-api",
       "status": "DRIFT",
       "differences": [
         {
-          "path": "spec.ports[0].port",
+          "path": "spec.ports.0.port",
           "helmValue": 80,
           "liveValue": 8080,
           "action": "WARN"
@@ -34,8 +39,30 @@
       ]
     },
     {
-      "resourceKey": "ConfigMap/prep/my-app-config",
+      "resourceKey": "ConfigMap/prep/payments-config",
       "status": "MISSING_LIVE",
+      "differences": []
+    },
+    {
+      "resourceKey": "Deployment/prep/orders-api",
+      "status": "MATCH",
+      "differences": []
+    },
+    {
+      "resourceKey": "Service/prep/orders-api",
+      "status": "DRIFT",
+      "differences": [
+        {
+          "path": "spec.ports.0.port",
+          "helmValue": 443,
+          "liveValue": 8443,
+          "action": "FAIL"
+        }
+      ]
+    },
+    {
+      "resourceKey": "ConfigMap/prep/orders-config",
+      "status": "MISSING_HELM",
       "differences": []
     }
   ]

@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { DiffTable } from './DiffTable';
-import type { ResourceResult } from '@/types/report';
+import { ResourceStatus } from '@/types/report';
+import type { ResourceIdentifier, ResourceResult } from '@/types/report';
 
 interface ResourceCardProps {
   resource: ResourceResult;
@@ -73,7 +74,7 @@ export function ResourceCard({
             <DiffTable diffs={resource.differences!} />
           ) : (
             <p className="text-sm text-muted-foreground italic py-2">
-              {resource.status === 'MATCH'
+              {resource.status === ResourceStatus.MATCH
                 ? 'No differences after normalization.'
                 : 'No differences recorded for this resource.'}
             </p>
@@ -87,7 +88,7 @@ export function ResourceCard({
 const parseResourceKey = (
   resourceKey: string,
   namespaceFallback?: string
-): { kind: string; namespace?: string; name: string } => {
+): ResourceIdentifier => {
   const parts = resourceKey.split("/");
   if (parts.length >= 3) {
     return {
@@ -99,7 +100,7 @@ const parseResourceKey = (
 
   return {
     kind: parts[0]?.trim() ?? "",
-    namespace: namespaceFallback?.trim(),
+    namespace: namespaceFallback?.trim() ?? "",
     name: parts[1]?.trim() ?? resourceKey.trim(),
   };
 };

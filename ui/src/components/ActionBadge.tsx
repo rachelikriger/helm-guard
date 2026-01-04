@@ -1,19 +1,19 @@
 import { AlertTriangle, XCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import type { DiffAction } from '@/types/report';
+import { DiffAction } from '@/types/report';
 
 interface ActionBadgeProps {
   action: DiffAction;
 }
 
 const actionConfig: Record<DiffAction, { label: string; className: string; icon: typeof AlertTriangle; help: string }> = {
-  WARN: {
+  [DiffAction.WARN]: {
     label: 'Warn',
     className: 'bg-action-warn text-action-warn',
     icon: AlertTriangle,
     help: 'Non-breaking drift; review before deploy.',
   },
-  FAIL: {
+  [DiffAction.FAIL]: {
     label: 'Fail',
     className: 'bg-action-fail text-action-fail',
     icon: XCircle,

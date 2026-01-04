@@ -27,7 +27,8 @@ export const validateInputs = (
 
 export const validateHelmRenderOptions = (
   releaseName?: string,
-  valuesFiles?: string[]
+  valuesFiles?: string[],
+  setValues?: string[]
 ): HelmRenderOptions => {
   const options: HelmRenderOptions = {};
 
@@ -45,6 +46,15 @@ export const validateHelmRenderOptions = (
       }
     }
     options.valuesFiles = valuesFiles;
+  }
+
+  if (setValues && setValues.length > 0) {
+    for (const setValue of setValues) {
+      if (!setValue.trim()) {
+        throw new Error("Invalid CLI input: --set values must be non-empty");
+      }
+    }
+    options.setValues = setValues;
   }
 
   return options;

@@ -1,10 +1,14 @@
-import type {
+import {
   DiffAction as ReportDiffAction,
+  DiffItem,
+  DiffPath,
   HelmGuardReport,
+  K8sKind,
   Mode,
+  NormalizationRule,
   ReportConfig,
   ReportSummary,
-  ResourceDiff,
+  ResourceIdentifier,
   ResourceResult,
   ResourceStatus,
 } from "../../../shared/report-contract";
@@ -15,7 +19,7 @@ import type {
 
 export interface K8sResource {
   apiVersion: string;
-  kind: string;
+  kind: K8sKind;
   metadata: {
     name: string;
     namespace?: string;
@@ -34,6 +38,7 @@ export interface K8sResource {
 export interface HelmRenderOptions {
   releaseName?: string;
   valuesFiles?: string[];
+  setValues?: string[];
 }
 
 /* =========================
@@ -51,8 +56,8 @@ export const MODE = {
 
 export const DIFF_ACTION = {
   IGNORE: "IGNORE",
-  WARN: "WARN",
-  FAIL: "FAIL",
+  WARN: ReportDiffAction.WARN,
+  FAIL: ReportDiffAction.FAIL,
 } as const;
 
 export type DiffActionInternal =
@@ -64,18 +69,11 @@ export type DiffActionInternal =
  */
 export type CountableAction = ReportDiffAction;
 
-export const RESOURCE_STATUS = {
-  MATCH: "MATCH",
-  DRIFT: "DRIFT",
-  MISSING_LIVE: "MISSING_LIVE",
-  MISSING_HELM: "MISSING_HELM",
-} as const;
-
 /* =========================
    Comparison results
    ========================= */
 
-export type Difference = ResourceDiff;
+export type Difference = DiffItem;
 
 export type ComparisonResult = ResourceResult;
 
@@ -87,7 +85,12 @@ export type {
   HelmGuardReport,
   ReportConfig,
   ReportSummary,
-  ResourceStatus,
+  ResourceIdentifier,
   ReportDiffAction as DiffAction,
   Mode,
+  K8sKind,
+  NormalizationRule,
+  DiffPath,
 };
+
+export { ResourceStatus };

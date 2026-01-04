@@ -21,6 +21,12 @@ export const renderHelmChart = (
     }
   }
 
+  if (options.setValues) {
+    for (const setValue of options.setValues) {
+      args.push("--set", setValue);
+    }
+  }
+
   const output = execWithContext(
     "helm",
     args,

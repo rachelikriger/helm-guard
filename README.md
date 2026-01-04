@@ -18,8 +18,9 @@ matches what is **currently running** in a given namespace.
 It:
 
 - Renders manifests using `helm template`
-- Fetches live, namespace-scoped resources from OpenShift
-- Normalizes noisy/system fields
+- Derives a whitelist of kinds from the rendered Helm output
+- Fetches live, namespace-scoped resources from OpenShift **only for those kinds**
+- Normalizes noisy/system fields and conservative platform defaults
 - Performs a **semantic comparison** (not a raw YAML diff)
 - Produces a clear validation result for CI and humans
 
@@ -73,12 +74,13 @@ node dist/index.js \
   --release my-release \
   --values values.yaml \
   --values values.prod.yaml \
+  --set image.tag=1.2.3 \
   --output report.json
 ````
 
 > ⚠️ **Important**
 > helm-guard is only as accurate as the Helm context you provide.
-> Always pass the same `--release` and `--values` used in deployment.
+> Always pass the same `--release`, `--values`, and `--set` inputs used in deployment.
 
 ---
 
@@ -90,6 +92,7 @@ node dist/index.js \
 | `--namespace` | Target OpenShift namespace                   |
 | `--release`   | Helm release name                            |
 | `--values`    | Helm values file (repeatable, order matters) |
+| `--set`       | Helm set value (repeatable, key=value)       |
 | `--strict`    | Treat all diffs as blocking                  |
 | `--output`    | Write JSON report to file                    |
 
@@ -117,6 +120,7 @@ It:
 * Does not run Helm
 * Does not connect to OpenShift
 * Visualizes validation results only
+* Offers a name-based filter that recalculates summary counts and the resource list
 
 You can load a report via URL:
 
@@ -135,6 +139,30 @@ helm-guard is packaged as two images:
 
 CI and production environments run the CLI image directly.
 Dockerfiles are provided for OpenShift deployment.
+
+---
+
+## Report Flow (Exact)
+
+1. Render the Helm chart using the provided inputs.
+2. Derive the unique kind whitelist from the rendered output.
+3. Fetch live OpenShift resources **only** for the whitelisted kinds in the namespace.
+4. Apply conservative platform-default suppression before diffing:
+   - When Helm omits a field and the live value equals a known default, the diff is suppressed.
+5. Build `report.json` from the Helm output, whitelisted live resources, and normalized diffs.
+
+## Extending Normalization Rules
+
+Platform-default suppression rules live in:
+
+- `cli/src/domain/platformDefaultRules.ts`
+
+Rules are **explicit and conservative**. Each entry defines:
+
+- `path` - the exact diff path to match
+- `defaultValue` - the live value that is safe to treat as a default
+
+Only add rules when you can confirm the live value is a stable default across clusters.
 
 ---
 

@@ -14,6 +14,7 @@ type CliOptions = {
   strict: boolean;
   release?: string;
   values: string[];
+  set: string[];
   output?: string;
 };
 
@@ -32,6 +33,12 @@ program
     (value: string, previous: string[]) => [...previous, value],
     []
   )
+  .option(
+    "--set <key=value>",
+    "Helm set value (repeatable)",
+    (value: string, previous: string[]) => [...previous, value],
+    []
+  )
   .option("--output <file>", "Write JSON report to file");
 
 const formatErrorMessage = (message: string): string => {
@@ -46,11 +53,15 @@ try {
   const opts = program.opts<CliOptions>();
 
   const mode = validateInputs(opts.chart, opts.namespace, opts.mode);
-  const helmRenderOptions = validateHelmRenderOptions(opts.release, opts.values);
+  const helmRenderOptions = validateHelmRenderOptions(
+    opts.release,
+    opts.values,
+    opts.set
+  );
   const runComparison =
     mode === MODE.BOOTSTRAP ? runBootstrapComparison : runHelmManagedComparison;
 
-  const results = runComparison({
+  const outcome = runComparison({
     chart: opts.chart,
     namespace: opts.namespace,
     strict: opts.strict,
@@ -73,11 +84,13 @@ try {
       reportConfig.valuesFiles = helmRenderOptions.valuesFiles;
     }
 
-    const report = buildReport(results, reportConfig);
+    reportConfig.whitelistedKinds = outcome.whitelistedKinds;
+
+    const report = buildReport(outcome.results, reportConfig);
     fs.writeFileSync(opts.output, JSON.stringify(report, null, 2));
   }
 
-  const exitCode = printReport(results, opts.namespace);
+  const exitCode = printReport(outcome.results, opts.namespace);
   process.exit(exitCode);
 } catch (err) {
   const message = err instanceof Error ? err.message : String(err);

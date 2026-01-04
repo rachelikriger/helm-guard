@@ -1,9 +1,9 @@
 import { ActionBadge } from './ActionBadge';
 import { JsonValue } from './JsonValue';
-import type { ResourceDiff } from '@/types/report';
+import type { DiffItem } from '@/types/report';
 
 interface DiffTableProps {
-  diffs: ResourceDiff[];
+  diffs: DiffItem[];
 }
 
 export function DiffTable({ diffs }: DiffTableProps) {

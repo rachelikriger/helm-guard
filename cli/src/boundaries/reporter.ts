@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import { ComparisonResult, DIFF_ACTION, RESOURCE_STATUS } from "../domain/types";
+import { ComparisonResult, DIFF_ACTION, ResourceStatus } from "../domain/types";
 const FAIL_MARK = chalk.red("x");
 const WARN_MARK = chalk.yellow("~");
 
@@ -10,10 +10,10 @@ export const printReport = (
   let exitCode = 0;
 
   for (const r of results) {
-    if (r.status === RESOURCE_STATUS.MATCH) continue;
+    if (r.status === ResourceStatus.MATCH) continue;
     if (
-      r.status === RESOURCE_STATUS.MISSING_LIVE ||
-      r.status === RESOURCE_STATUS.MISSING_HELM
+      r.status === ResourceStatus.MISSING_LIVE ||
+      r.status === ResourceStatus.MISSING_HELM
     ) {
       exitCode = Math.max(exitCode, 2);
     }

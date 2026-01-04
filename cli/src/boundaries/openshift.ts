@@ -1,5 +1,5 @@
-import { K8sResource } from "../domain/types";
-import { execWithContext, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
+import { K8sKind, K8sResource } from "../domain/types";
+import { execWithContext, formatError, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
 import { isK8sResource, isRecord } from "../validation/domain";
 
 export interface FetchOptions {
@@ -12,13 +12,26 @@ export interface FetchOptions {
  */
 export const fetchLiveResources = (
   namespace: string,
+  whitelistedKinds: K8sKind[],
   options: FetchOptions = {}
 ): K8sResource[] => {
-  const yamlOutput = runOcGetAll(
-    namespace,
-    options.labelSelector,
-    options.contextLabel
-  );
+  if (whitelistedKinds.length === 0) {
+    return [];
+  }
+
+  let yamlOutput = "";
+  try {
+    yamlOutput = runOcGetKinds(
+      namespace,
+      whitelistedKinds,
+      options.labelSelector,
+      options.contextLabel
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : formatError(err);
+    console.error(`helm-guard warning: ${message}`);
+    return [];
+  }
   const documents = parseYamlDocumentsWithContext(
     yamlOutput,
     "OpenShift YAML output"
@@ -31,14 +44,18 @@ export const fetchLiveResources = (
    ========================= */
 
 /**
- * Run `oc get all` and return raw YAML output
+ * Run `oc get <kinds>` and return raw YAML output
  */
-const runOcGetAll = (
+const runOcGetKinds = (
   namespace: string,
+  whitelistedKinds: K8sKind[],
   labelSelector?: string,
   contextLabel?: string
 ): string => {
-  const args = ["get", "all", "-n", namespace];
+  const kinds = Array.from(new Set(whitelistedKinds)).sort((a, b) =>
+    a.localeCompare(b)
+  );
+  const args = ["get", kinds.join(","), "-n", namespace];
   if (labelSelector) {
     args.push("-l", labelSelector);
   }
@@ -49,7 +66,7 @@ const runOcGetAll = (
   return execWithContext(
     "oc",
     args,
-    `run "oc get all" in namespace "${namespace}"${contextSuffix}`
+    `run "oc get ${kinds.join(",")}" in namespace "${namespace}"${contextSuffix}`
   );
 };
 
