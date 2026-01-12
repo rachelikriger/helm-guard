@@ -2,13 +2,12 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "rootDir": ".",
+    "rootDir": "src",
     "outDir": "dist",
     "composite": true,
     "declaration": true,
-    "emitDeclarationOnly": true,
     "skipLibCheck": true,
     "strict": true
   },
-  "include": ["report-contract.ts"]
+  "include": ["src"]
 }

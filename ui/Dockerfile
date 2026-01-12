@@ -3,16 +3,17 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY ui/package.json ui/package-lock.json ./ui/
+RUN npm --prefix ./ui ci
 
-COPY . .
-RUN npm run build
+COPY ui ./ui
+COPY shared ./shared
+RUN npm --prefix ./ui run build
 
 FROM nginx:1.25-alpine AS runtime
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist/ /usr/share/nginx/html/
+COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/ui/dist/ /usr/share/nginx/html/
 
 # OpenShift runs with a random UID; keep runtime dirs group-writable for GID 0.
 RUN chgrp -R 0 /usr/share/nginx/html /var/cache/nginx /var/run \

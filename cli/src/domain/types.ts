@@ -11,7 +11,7 @@ import {
   ResourceIdentifier,
   ResourceResult,
   ResourceStatus,
-} from "../../../shared/report-contract";
+} from "../../../shared/dist/report-contract";
 
 /* =========================
    Kubernetes domain types

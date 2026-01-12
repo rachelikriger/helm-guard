@@ -1,7 +1,7 @@
 import {
   DiffAction,
   ResourceStatus,
-} from "../../../shared/report-contract";
+} from "../../../shared/src/report-contract";
 import type {
   DiffItem,
   DiffPath,
@@ -11,7 +11,7 @@ import type {
   ReportSummary,
   ResourceIdentifier,
   ResourceResult,
-} from "../../../shared/report-contract";
+} from "../../../shared/src/report-contract";
 
 export type {
   DiffItem,
