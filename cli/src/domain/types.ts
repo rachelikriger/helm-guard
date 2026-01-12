@@ -11,7 +11,7 @@ import {
   ResourceIdentifier,
   ResourceResult,
   ResourceStatus,
-} from "../../../shared/dist/report-contract";
+} from "@helm-guard/shared";
 
 /* =========================
    Kubernetes domain types

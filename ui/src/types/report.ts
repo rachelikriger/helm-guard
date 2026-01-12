@@ -1,7 +1,7 @@
 import {
   DiffAction,
   ResourceStatus,
-} from "../../../shared/src/report-contract";
+} from "@helm-guard/shared";
 import type {
   DiffItem,
   DiffPath,
@@ -11,7 +11,7 @@ import type {
   ReportSummary,
   ResourceIdentifier,
   ResourceResult,
-} from "../../../shared/src/report-contract";
+} from "@helm-guard/shared";
 
 export type {
   DiffItem,

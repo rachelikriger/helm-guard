@@ -3,13 +3,22 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
+# ---------- build shared FIRST ----------
+COPY shared/package.json shared/package-lock.json ./shared/
+RUN npm --prefix ./shared ci
+
+COPY shared/tsconfig.json shared/src ./shared/
+RUN npm --prefix ./shared run build
+
+# ---------- then build ui ----------
 COPY ui/package.json ui/package-lock.json ./ui/
 RUN npm --prefix ./ui ci
 
 COPY ui ./ui
-COPY shared ./shared
 RUN npm --prefix ./ui run build
 
+
+# ---------- runtime ----------
 FROM nginx:1.25-alpine AS runtime
 
 COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
