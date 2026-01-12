@@ -1,5 +1,5 @@
 import { K8sKind, K8sResource } from "../domain/types";
-import { execWithContext, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
+import { runCommand, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
 import { isK8sResource, isRecord } from "../validation/domain";
 
 export interface FetchOptions {
@@ -10,16 +10,16 @@ export interface FetchOptions {
 /**
  * Fetch live Kubernetes resources from OpenShift for a given namespace.
  */
-export const fetchLiveResources = (
+export const fetchLiveResources = async (
   namespace: string,
   whitelistedKinds: K8sKind[],
   options: FetchOptions = {}
-): K8sResource[] => {
+): Promise<K8sResource[]> => {
   if (whitelistedKinds.length === 0) {
     return [];
   }
 
-  const yamlOutput = runOcGetKinds(
+  const yamlOutput = await runOcGetKinds(
     namespace,
     whitelistedKinds,
     options.labelSelector,
@@ -39,12 +39,12 @@ export const fetchLiveResources = (
 /**
  * Run `oc get <kinds>` and return raw YAML output
  */
-const runOcGetKinds = (
+const runOcGetKinds = async (
   namespace: string,
   whitelistedKinds: K8sKind[],
   labelSelector?: string,
   contextLabel?: string
-): string => {
+): Promise<string> => {
   const kinds = Array.from(new Set(whitelistedKinds)).sort((a, b) =>
     a.localeCompare(b)
   );
@@ -56,11 +56,12 @@ const runOcGetKinds = (
 
   const contextSuffix = contextLabel ? ` (${contextLabel} mode)` : "";
 
-  return execWithContext(
+  const result = await runCommand(
     "oc",
     args,
     `run "oc get ${kinds.join(",")}" in namespace "${namespace}"${contextSuffix}`
   );
+  return result.stdout;
 };
 
 /**

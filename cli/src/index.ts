@@ -48,53 +48,57 @@ const formatErrorMessage = (message: string): string => {
   return `helm-guard failed: ${message}`;
 };
 
-try {
-  program.parse();
-  const opts = program.opts<CliOptions>();
+const main = async (): Promise<void> => {
+  try {
+    program.parse();
+    const opts = program.opts<CliOptions>();
 
-  const mode = validateInputs(opts.chart, opts.namespace, opts.mode);
-  const helmRenderOptions = validateHelmRenderOptions(
-    opts.release,
-    opts.values,
-    opts.set
-  );
-  const runComparison =
-    mode === MODE.BOOTSTRAP ? runBootstrapComparison : runHelmManagedComparison;
+    const mode = validateInputs(opts.chart, opts.namespace, opts.mode);
+    const helmRenderOptions = validateHelmRenderOptions(
+      opts.release,
+      opts.values,
+      opts.set
+    );
+    const runComparison =
+      mode === MODE.BOOTSTRAP ? runBootstrapComparison : runHelmManagedComparison;
 
-  const outcome = runComparison({
-    chart: opts.chart,
-    namespace: opts.namespace,
-    strict: opts.strict,
-    helmRenderOptions,
-  });
-
-  if (opts.output) {
-    const reportConfig: ReportConfig = {
-      helmChart: opts.chart,
+    const outcome = await runComparison({
+      chart: opts.chart,
       namespace: opts.namespace,
-      strictMode: opts.strict,
-      mode,
-    };
+      strict: opts.strict,
+      helmRenderOptions,
+    });
 
-    if (helmRenderOptions.releaseName) {
-      reportConfig.releaseName = helmRenderOptions.releaseName;
+    if (opts.output) {
+      const reportConfig: ReportConfig = {
+        helmChart: opts.chart,
+        namespace: opts.namespace,
+        strictMode: opts.strict,
+        mode,
+      };
+
+      if (helmRenderOptions.releaseName) {
+        reportConfig.releaseName = helmRenderOptions.releaseName;
+      }
+
+      if (helmRenderOptions.valuesFiles && helmRenderOptions.valuesFiles.length > 0) {
+        reportConfig.valuesFiles = helmRenderOptions.valuesFiles;
+      }
+
+      reportConfig.whitelistedKinds = outcome.whitelistedKinds;
+
+      const report = buildReport(outcome.results, reportConfig);
+      fs.writeFileSync(opts.output, JSON.stringify(report, null, 2));
     }
 
-    if (helmRenderOptions.valuesFiles && helmRenderOptions.valuesFiles.length > 0) {
-      reportConfig.valuesFiles = helmRenderOptions.valuesFiles;
-    }
-
-    reportConfig.whitelistedKinds = outcome.whitelistedKinds;
-
-    const report = buildReport(outcome.results, reportConfig);
-    fs.writeFileSync(opts.output, JSON.stringify(report, null, 2));
+    const exitCode = printReport(outcome.results, opts.namespace);
+    process.exit(exitCode);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const output = formatErrorMessage(message);
+    console.error(output);
+    process.exit(3);
   }
+};
 
-  const exitCode = printReport(outcome.results, opts.namespace);
-  process.exit(exitCode);
-} catch (err) {
-  const message = err instanceof Error ? err.message : String(err);
-  const output = formatErrorMessage(message);
-  console.error(output);
-  process.exit(3);
-}
+void main();

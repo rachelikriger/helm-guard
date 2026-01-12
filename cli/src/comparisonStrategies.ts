@@ -19,16 +19,16 @@ interface ComparisonOutcome {
 /**
  * Default bootstrap comparison: render Helm chart, fetch whitelisted live resources, compare.
  */
-export const runBootstrapComparison = (
+export const runBootstrapComparison = async (
   params: ComparisonParams
-): ComparisonOutcome => {
-  const helmResources = renderHelmChart(
+): Promise<ComparisonOutcome> => {
+  const helmResources = await renderHelmChart(
     params.chart,
     params.namespace,
     params.helmRenderOptions
   );
   const whitelistedKinds = deriveKindWhitelist(helmResources);
-  const liveResources = fetchLiveResources(params.namespace, whitelistedKinds, {
+  const liveResources = await fetchLiveResources(params.namespace, whitelistedKinds, {
     contextLabel: MODE.BOOTSTRAP,
   });
   return {
@@ -46,8 +46,8 @@ export const runBootstrapComparison = (
  * Placeholder for helm-managed strategy.
  * TODO: implement helm-managed comparison (filter to Helm-managed resources or helm diff).
  */
-export const runHelmManagedComparison = (
+export const runHelmManagedComparison = async (
   _params: ComparisonParams
-): ComparisonOutcome => {
+): Promise<ComparisonOutcome> => {
   throw new Error(`${MODE.HELM_MANAGED} mode is not implemented yet`);
 };

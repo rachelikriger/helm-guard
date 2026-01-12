@@ -1,12 +1,12 @@
 import { HelmRenderOptions, K8sResource } from "../domain/types";
-import { execWithContext, parseYamlDocuments } from "./io";
+import { runCommand, parseYamlDocuments } from "./io";
 import { isK8sResource } from "../validation/domain";
 
-export const renderHelmChart = (
+export const renderHelmChart = async (
   chartPath: string,
   namespace: string,
   options: HelmRenderOptions
-): K8sResource[] => {
+): Promise<K8sResource[]> => {
   const args = ["template"];
 
   if (options.releaseName) {
@@ -27,7 +27,7 @@ export const renderHelmChart = (
     }
   }
 
-  const output = execWithContext(
+  const result = await runCommand(
     "helm",
     args,
     `run "helm template" for chart ${chartPath} in namespace ${namespace}`
@@ -36,7 +36,7 @@ export const renderHelmChart = (
   const resources: K8sResource[] = [];
 
   const documents = parseYamlDocuments(
-    output,
+    result.stdout,
     `Helm output as YAML for chart ${chartPath}`
   );
 
