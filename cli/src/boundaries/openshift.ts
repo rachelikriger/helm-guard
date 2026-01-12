@@ -1,35 +1,27 @@
-import { K8sKind, K8sResource } from "../domain/types";
-import { runCommand, parseYamlDocuments as parseYamlDocumentsWithContext } from "./io";
-import { isK8sResource, isRecord } from "../validation/domain";
+import { K8sKind, K8sResource } from '../domain/types';
+import { runCommand, parseYamlDocuments as parseYamlDocumentsWithContext } from './io';
+import { isK8sResource, isRecord } from '../validation/domain';
 
 export interface FetchOptions {
-  labelSelector?: string;
-  contextLabel?: string;
+    labelSelector?: string;
+    contextLabel?: string;
 }
 
 /**
  * Fetch live Kubernetes resources from OpenShift for a given namespace.
  */
 export const fetchLiveResources = async (
-  namespace: string,
-  whitelistedKinds: K8sKind[],
-  options: FetchOptions = {}
+    namespace: string,
+    whitelistedKinds: K8sKind[],
+    options: FetchOptions = {},
 ): Promise<K8sResource[]> => {
-  if (whitelistedKinds.length === 0) {
-    return [];
-  }
+    if (whitelistedKinds.length === 0) {
+        return [];
+    }
 
-  const yamlOutput = await runOcGetKinds(
-    namespace,
-    whitelistedKinds,
-    options.labelSelector,
-    options.contextLabel
-  );
-  const documents = parseYamlDocumentsWithContext(
-    yamlOutput,
-    "OpenShift YAML output"
-  );
-  return extractK8sResources(documents);
+    const yamlOutput = await runOcGetKinds(namespace, whitelistedKinds, options.labelSelector, options.contextLabel);
+    const documents = parseYamlDocumentsWithContext(yamlOutput, 'OpenShift YAML output');
+    return extractK8sResources(documents);
 };
 
 /* =========================
@@ -40,60 +32,58 @@ export const fetchLiveResources = async (
  * Run `oc get <kinds>` and return raw YAML output
  */
 const runOcGetKinds = async (
-  namespace: string,
-  whitelistedKinds: K8sKind[],
-  labelSelector?: string,
-  contextLabel?: string
+    namespace: string,
+    whitelistedKinds: K8sKind[],
+    labelSelector?: string,
+    contextLabel?: string,
 ): Promise<string> => {
-  const kinds = Array.from(new Set(whitelistedKinds)).sort((a, b) =>
-    a.localeCompare(b)
-  );
-  const args = ["get", kinds.join(","), "-n", namespace];
-  if (labelSelector) {
-    args.push("-l", labelSelector);
-  }
-  args.push("-o", "yaml");
+    const kinds = Array.from(new Set(whitelistedKinds)).sort((a, b) => a.localeCompare(b));
+    const args = ['get', kinds.join(','), '-n', namespace];
+    if (labelSelector) {
+        args.push('-l', labelSelector);
+    }
+    args.push('-o', 'yaml');
 
-  const contextSuffix = contextLabel ? ` (${contextLabel} mode)` : "";
+    const contextSuffix = contextLabel ? ` (${contextLabel} mode)` : '';
 
-  const result = await runCommand(
-    "oc",
-    args,
-    `run "oc get ${kinds.join(",")}" in namespace "${namespace}"${contextSuffix}`
-  );
-  return result.stdout;
+    const result = await runCommand(
+        'oc',
+        args,
+        `run "oc get ${kinds.join(',')}" in namespace "${namespace}"${contextSuffix}`,
+    );
+    return result.stdout;
 };
 
 /**
  * Extract valid K8s resources from parsed YAML documents
  */
 const extractK8sResources = (documents: unknown[]): K8sResource[] => {
-  const resources: K8sResource[] = [];
+    const resources: K8sResource[] = [];
 
-  for (const doc of documents) {
-    if (hasItemsArray(doc)) {
-      for (const item of doc.items) {
-        if (isK8sResource(item)) {
-          resources.push(item);
+    for (const doc of documents) {
+        if (hasItemsArray(doc)) {
+            for (const item of doc.items) {
+                if (isK8sResource(item)) {
+                    resources.push(item);
+                }
+            }
+            continue;
         }
-      }
-      continue;
+
+        if (isK8sResource(doc)) {
+            resources.push(doc);
+        }
     }
 
-    if (isK8sResource(doc)) {
-      resources.push(doc);
-    }
-  }
-
-  return resources;
+    return resources;
 };
 
 /**
  * Type guard: object with `items: unknown[]`
  */
 function hasItemsArray(obj: unknown): obj is { items: unknown[] } {
-  if (!isRecord(obj)) {
-    return false;
-  }
-  return Array.isArray(obj.items);
+    if (!isRecord(obj)) {
+        return false;
+    }
+    return Array.isArray(obj.items);
 }

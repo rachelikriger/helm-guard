@@ -5,135 +5,136 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    :root {
+        --background: 222 47% 6%;
+        --foreground: 210 40% 98%;
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+        --card: 222 47% 8%;
+        --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
+        --popover: 222 47% 8%;
+        --popover-foreground: 210 40% 98%;
 
-    --primary: 199 89% 48%;
-    --primary-foreground: 222 47% 6%;
+        --primary: 199 89% 48%;
+        --primary-foreground: 222 47% 6%;
 
-    --secondary: 222 47% 14%;
-    --secondary-foreground: 210 40% 98%;
+        --secondary: 222 47% 14%;
+        --secondary-foreground: 210 40% 98%;
 
-    --muted: 222 47% 12%;
-    --muted-foreground: 215 20% 55%;
+        --muted: 222 47% 12%;
+        --muted-foreground: 215 20% 55%;
 
-    --accent: 222 47% 16%;
-    --accent-foreground: 210 40% 98%;
+        --accent: 222 47% 16%;
+        --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 210 40% 98%;
 
-    --border: 222 47% 18%;
-    --input: 222 47% 18%;
-    --ring: 199 89% 48%;
+        --border: 222 47% 18%;
+        --input: 222 47% 18%;
+        --ring: 199 89% 48%;
 
-    --radius: 0.5rem;
+        --radius: 0.5rem;
 
-    /* Status colors */
-    --status-match: 142 71% 45%;
-    --status-match-bg: 142 71% 45% / 0.12;
-    --status-drift: 38 92% 50%;
-    --status-drift-bg: 38 92% 50% / 0.12;
-    --status-missing-live: 280 67% 55%;
-    --status-missing-live-bg: 280 67% 55% / 0.12;
-    --status-missing-helm: 217 91% 60%;
-    --status-missing-helm-bg: 217 91% 60% / 0.12;
-    
-    /* Action colors */
-    --action-warn: 45 93% 47%;
-    --action-warn-bg: 45 93% 47% / 0.12;
-    --action-fail: 0 72% 51%;
-    --action-fail-bg: 0 72% 51% / 0.12;
+        /* Status colors */
+        --status-match: 142 71% 45%;
+        --status-match-bg: 142 71% 45% / 0.12;
+        --status-drift: 38 92% 50%;
+        --status-drift-bg: 38 92% 50% / 0.12;
+        --status-missing-live: 280 67% 55%;
+        --status-missing-live-bg: 280 67% 55% / 0.12;
+        --status-missing-helm: 217 91% 60%;
+        --status-missing-helm-bg: 217 91% 60% / 0.12;
 
-    /* Sidebar - keeping for compatibility */
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 47% 14%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 18%;
-    --sidebar-ring: 199 89% 48%;
-  }
+        /* Action colors */
+        --action-warn: 45 93% 47%;
+        --action-warn-bg: 45 93% 47% / 0.12;
+        --action-fail: 0 72% 51%;
+        --action-fail-bg: 0 72% 51% / 0.12;
+
+        /* Sidebar - keeping for compatibility */
+        --sidebar-background: 222 47% 6%;
+        --sidebar-foreground: 210 40% 98%;
+        --sidebar-primary: 199 89% 48%;
+        --sidebar-primary-foreground: 222 47% 6%;
+        --sidebar-accent: 222 47% 14%;
+        --sidebar-accent-foreground: 210 40% 98%;
+        --sidebar-border: 222 47% 18%;
+        --sidebar-ring: 199 89% 48%;
+    }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+    * {
+        @apply border-border;
+    }
 
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
-  }
+    body {
+        @apply bg-background text-foreground font-sans antialiased;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
 
-  code, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
-  }
+    code,
+    .font-mono {
+        font-family: 'JetBrains Mono', monospace;
+    }
 }
 
 @layer utilities {
-  .text-status-match {
-    color: hsl(var(--status-match));
-  }
-  .text-status-drift {
-    color: hsl(var(--status-drift));
-  }
-  .text-status-missing-live {
-    color: hsl(var(--status-missing-live));
-  }
-  .text-status-missing-helm {
-    color: hsl(var(--status-missing-helm));
-  }
-  .text-action-warn {
-    color: hsl(var(--action-warn));
-  }
-  .text-action-fail {
-    color: hsl(var(--action-fail));
-  }
-  
-  .bg-status-match {
-    background-color: hsl(var(--status-match-bg));
-  }
-  .bg-status-drift {
-    background-color: hsl(var(--status-drift-bg));
-  }
-  .bg-status-missing-live {
-    background-color: hsl(var(--status-missing-live-bg));
-  }
-  .bg-status-missing-helm {
-    background-color: hsl(var(--status-missing-helm-bg));
-  }
-  .bg-action-warn {
-    background-color: hsl(var(--action-warn-bg));
-  }
-  .bg-action-fail {
-    background-color: hsl(var(--action-fail-bg));
-  }
+    .text-status-match {
+        color: hsl(var(--status-match));
+    }
+    .text-status-drift {
+        color: hsl(var(--status-drift));
+    }
+    .text-status-missing-live {
+        color: hsl(var(--status-missing-live));
+    }
+    .text-status-missing-helm {
+        color: hsl(var(--status-missing-helm));
+    }
+    .text-action-warn {
+        color: hsl(var(--action-warn));
+    }
+    .text-action-fail {
+        color: hsl(var(--action-fail));
+    }
 
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--border)) transparent;
-  }
+    .bg-status-match {
+        background-color: hsl(var(--status-match-bg));
+    }
+    .bg-status-drift {
+        background-color: hsl(var(--status-drift-bg));
+    }
+    .bg-status-missing-live {
+        background-color: hsl(var(--status-missing-live-bg));
+    }
+    .bg-status-missing-helm {
+        background-color: hsl(var(--status-missing-helm-bg));
+    }
+    .bg-action-warn {
+        background-color: hsl(var(--action-warn-bg));
+    }
+    .bg-action-fail {
+        background-color: hsl(var(--action-fail-bg));
+    }
 
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: hsl(var(--border)) transparent;
+    }
 
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--border));
-    border-radius: 3px;
-  }
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: hsl(var(--border));
+        border-radius: 3px;
+    }
 }

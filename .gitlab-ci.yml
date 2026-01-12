@@ -1,71 +1,71 @@
 ﻿stages:
-  - validate
+    - validate
 
 variables:
-  HELM_GUARD_UI_URL: "https://helm-guard-ui.my-company.com"
-  HELM_GUARD_CLI_IMAGE: "image-registry.openshift.svc:5000/<ns>/helm-guard-cli:stable"
+    HELM_GUARD_UI_URL: 'https://helm-guard-ui.my-company.com'
+    HELM_GUARD_CLI_IMAGE: 'image-registry.openshift.svc:5000/<ns>/helm-guard-cli:stable'
 
 helm_guard_validate:
-  stage: validate
-  image: "$HELM_GUARD_CLI_IMAGE"
+    stage: validate
+    image: '$HELM_GUARD_CLI_IMAGE'
 
-  script:
-    - |
-      echo ""
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo "🛡️  HELM-GUARD | Validation Started"
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo ""
+    script:
+        - |
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "🛡️  HELM-GUARD | Validation Started"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
 
-      set -- \
-        --chart "$HELM_CHART_PATH" \
-        --namespace "$HELM_NAMESPACE" \
-        --output report.json
+            set -- \
+              --chart "$HELM_CHART_PATH" \
+              --namespace "$HELM_NAMESPACE" \
+              --output report.json
 
-      if [ -n "$HELM_GUARD_MODE" ]; then
-        set -- "$@" --mode "$HELM_GUARD_MODE"
-      fi
+            if [ -n "$HELM_GUARD_MODE" ]; then
+              set -- "$@" --mode "$HELM_GUARD_MODE"
+            fi
 
-      if [ -n "$HELM_RELEASE_NAME" ]; then
-        set -- "$@" --release "$HELM_RELEASE_NAME"
-      fi
+            if [ -n "$HELM_RELEASE_NAME" ]; then
+              set -- "$@" --release "$HELM_RELEASE_NAME"
+            fi
 
-      if [ -n "$HELM_VALUES_FILES" ]; then
-        for values_file in $HELM_VALUES_FILES; do
-          set -- "$@" --values "$values_file"
-        done
-      fi
+            if [ -n "$HELM_VALUES_FILES" ]; then
+              for values_file in $HELM_VALUES_FILES; do
+                set -- "$@" --values "$values_file"
+              done
+            fi
 
-      if [ -n "$HELM_SET_VALUES" ]; then
-        for set_value in $HELM_SET_VALUES; do
-          set -- "$@" --set "$set_value"
-        done
-      fi
+            if [ -n "$HELM_SET_VALUES" ]; then
+              for set_value in $HELM_SET_VALUES; do
+                set -- "$@" --set "$set_value"
+              done
+            fi
 
-      echo "🔍 Comparing Helm desired state vs live OpenShift resources"
-      echo ""
-      helm-guard "$@"
+            echo "🔍 Comparing Helm desired state vs live OpenShift resources"
+            echo ""
+            helm-guard "$@"
 
-  artifacts:
-    when: always
-    paths:
-      - report.json
-    expire_in: 7 days
+    artifacts:
+        when: always
+        paths:
+            - report.json
+        expire_in: 7 days
 
-  after_script:
-    - |
-      REPORT_URL="${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/report.json"
+    after_script:
+        - |
+            REPORT_URL="${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/report.json"
 
-      echo ""
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo "📄 HELM-GUARD | Report Ready"
-      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-      echo ""
-      echo "🔗 View validation report:"
-      echo "👉 ${HELM_GUARD_UI_URL}/?reportUrl=${REPORT_URL}"
-      echo ""
-      echo "ℹ️  Interpretation guide:"
-      echo "   ✅ No findings        → Safe to deploy"
-      echo "   ⚠️  WARN only         → Review recommended"
-      echo "   ❌ FAIL               → Deployment should be blocked"
-      echo ""
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📄 HELM-GUARD | Report Ready"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "🔗 View validation report:"
+            echo "👉 ${HELM_GUARD_UI_URL}/?reportUrl=${REPORT_URL}"
+            echo ""
+            echo "ℹ️  Interpretation guide:"
+            echo "   ✅ No findings        → Safe to deploy"
+            echo "   ⚠️  WARN only         → Review recommended"
+            echo "   ❌ FAIL               → Deployment should be blocked"
+            echo ""

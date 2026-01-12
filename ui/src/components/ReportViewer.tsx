@@ -7,240 +7,222 @@ import { DiffAction, ResourceStatus } from '@/types/report';
 import type { HelmGuardReport, ResourceResult } from '@/types/report';
 
 interface ReportViewerProps {
-  report: HelmGuardReport;
-  onNewReport: () => void;
+    report: HelmGuardReport;
+    onNewReport: () => void;
 }
 
 export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
-  const [nameFilter, setNameFilter] = useState('');
-  const [selectedStatuses, setSelectedStatuses] = useState<ResourceStatus[]>([]);
-  const [selectedActions, setSelectedActions] = useState<DiffAction[]>([]);
+    const [nameFilter, setNameFilter] = useState('');
+    const [selectedStatuses, setSelectedStatuses] = useState<ResourceStatus[]>([]);
+    const [selectedActions, setSelectedActions] = useState<DiffAction[]>([]);
 
-  const namespaceResults = report.results;
-  const filteredResults = useMemo(
-    () =>
-      filterResults(
-        namespaceResults,
-        nameFilter,
-        selectedStatuses,
-        selectedActions
-      ),
-    [namespaceResults, nameFilter, selectedStatuses, selectedActions]
-  );
+    const namespaceResults = report.results;
+    const filteredResults = useMemo(
+        () => filterResults(namespaceResults, nameFilter, selectedStatuses, selectedActions),
+        [namespaceResults, nameFilter, selectedStatuses, selectedActions],
+    );
 
-  const isFiltered =
-    nameFilter.trim().length > 0 ||
-    selectedStatuses.length > 0 ||
-    selectedActions.length > 0;
+    const isFiltered = nameFilter.trim().length > 0 || selectedStatuses.length > 0 || selectedActions.length > 0;
 
-  const clearAllFilters = () => {
-    setNameFilter('');
-    setSelectedStatuses([]);
-    setSelectedActions([]);
-  };
-
-  const namespaceSummary = useMemo(() => {
-    const countByStatus = (status: ResourceStatus): number =>
-      filteredResults.filter(result => result.status === status).length;
-    const countByAction = (action: DiffAction): number =>
-      filteredResults
-        .flatMap(result => result.differences ?? [])
-        .filter(diff => diff.action === action).length;
-
-    return {
-      total: filteredResults.length,
-      matched: countByStatus(ResourceStatus.MATCH),
-      drifted: countByStatus(ResourceStatus.DRIFT),
-      missingLive: countByStatus(ResourceStatus.MISSING_LIVE),
-      missingHelm: countByStatus(ResourceStatus.MISSING_HELM),
-      warnings: countByAction(DiffAction.WARN),
-      failures:
-        countByAction(DiffAction.FAIL) +
-        countByStatus(ResourceStatus.MISSING_LIVE) +
-        countByStatus(ResourceStatus.MISSING_HELM),
+    const clearAllFilters = () => {
+        setNameFilter('');
+        setSelectedStatuses([]);
+        setSelectedActions([]);
     };
-  }, [filteredResults]);
 
-  const includedKinds = useMemo(() => {
-    const kinds = new Set<string>();
-    for (const result of filteredResults) {
-      const kind = getKindFromKey(result.resourceKey).trim();
-      if (kind) {
-        kinds.add(kind);
-      }
-    }
-    return Array.from(kinds).sort();
-  }, [filteredResults]);
+    const namespaceSummary = useMemo(() => {
+        const countByStatus = (status: ResourceStatus): number =>
+            filteredResults.filter(result => result.status === status).length;
+        const countByAction = (action: DiffAction): number =>
+            filteredResults.flatMap(result => result.differences ?? []).filter(diff => diff.action === action).length;
 
-  const includedResourceNames = useMemo(() => {
-    const names = new Set<string>();
-    for (const result of filteredResults) {
-      const name = getNameFromKey(result.resourceKey).trim();
-      if (name) {
-        names.add(name);
-      }
-    }
-    return Array.from(names);
-  }, [filteredResults]);
+        return {
+            total: filteredResults.length,
+            matched: countByStatus(ResourceStatus.MATCH),
+            drifted: countByStatus(ResourceStatus.DRIFT),
+            missingLive: countByStatus(ResourceStatus.MISSING_LIVE),
+            missingHelm: countByStatus(ResourceStatus.MISSING_HELM),
+            warnings: countByAction(DiffAction.WARN),
+            failures:
+                countByAction(DiffAction.FAIL) +
+                countByStatus(ResourceStatus.MISSING_LIVE) +
+                countByStatus(ResourceStatus.MISSING_HELM),
+        };
+    }, [filteredResults]);
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <FileJson className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">
-                  Helm Guard Report
-                </h1>
-                {report.config?.helmChart && (
-                  <p className="text-sm text-muted-foreground">
-                    Chart: <span className="font-mono">{report.config.helmChart}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={onNewReport}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
-            >
-              <Upload className="w-4 h-4" />
-              Load New Report
-            </button>
-          </div>
+    const includedKinds = useMemo(() => {
+        const kinds = new Set<string>();
+        for (const result of filteredResults) {
+            const kind = getKindFromKey(result.resourceKey).trim();
+            if (kind) {
+                kinds.add(kind);
+            }
+        }
+        return Array.from(kinds).sort();
+    }, [filteredResults]);
+
+    const includedResourceNames = useMemo(() => {
+        const names = new Set<string>();
+        for (const result of filteredResults) {
+            const name = getNameFromKey(result.resourceKey).trim();
+            if (name) {
+                names.add(name);
+            }
+        }
+        return Array.from(names);
+    }, [filteredResults]);
+
+    return (
+        <div className="min-h-screen bg-background">
+            {/* Header */}
+            <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
+                <div className="container py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                                <FileJson className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                                <h1 className="text-lg font-semibold text-foreground">Helm Guard Report</h1>
+                                {report.config?.helmChart && (
+                                    <p className="text-sm text-muted-foreground">
+                                        Chart: <span className="font-mono">{report.config.helmChart}</span>
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <button
+                            onClick={onNewReport}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+                        >
+                            <Upload className="w-4 h-4" />
+                            Load New Report
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            {/* Content */}
+            <main className="container py-8 space-y-8">
+                {/* Name Filter */}
+                <section>
+                    <div className="space-y-3">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <input
+                                type="text"
+                                value={nameFilter}
+                                onChange={e => setNameFilter(e.target.value)}
+                                placeholder="Filter by service or resource name..."
+                                className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                            />
+                        </div>
+                        {isFiltered && (
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                <span>
+                                    Filtered view — showing {filteredResults.length} of {namespaceResults.length}{' '}
+                                    resources
+                                </span>
+                                <button
+                                    onClick={clearAllFilters}
+                                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                {/* Summary Section */}
+                <section>
+                    <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Summary</h2>
+                    <ReportSummary
+                        summary={namespaceSummary}
+                        helmChart={report.config?.helmChart}
+                        namespace={report.config?.namespace}
+                        timestamp={report.timestamp}
+                        includedKinds={includedKinds}
+                        includedResourceNames={includedResourceNames}
+                        namespaceResourceCount={filteredResults.length}
+                    />
+                </section>
+
+                {/* Filters Section */}
+                <section>
+                    <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Filters</h2>
+                    <Filters
+                        selectedStatuses={selectedStatuses}
+                        onStatusChange={setSelectedStatuses}
+                        selectedActions={selectedActions}
+                        onActionChange={setSelectedActions}
+                        onClearAll={clearAllFilters}
+                    />
+                </section>
+
+                {/* Resources Section */}
+                <section>
+                    <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
+                        Resources
+                    </h2>
+                    <ResourceList
+                        namespaceResults={filteredResults}
+                        totalResults={namespaceResults.length}
+                        namespaceLabel={report.config?.namespace}
+                    />
+                </section>
+            </main>
+
+            {/* Footer */}
+            <footer className="border-t border-border py-6">
+                <div className="container">
+                    <p className="text-xs text-muted-foreground text-center">
+                        helm-guard-report-viewer • Read-only validation report viewer
+                    </p>
+                </div>
+            </footer>
         </div>
-      </header>
-
-      {/* Content */}
-      <main className="container py-8 space-y-8">
-        {/* Name Filter */}
-        <section>
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={nameFilter}
-                onChange={(e) => setNameFilter(e.target.value)}
-                placeholder="Filter by service or resource name..."
-                className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-              />
-            </div>
-            {isFiltered && (
-              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                <span>
-                  Filtered view — showing {filteredResults.length} of {namespaceResults.length} resources
-                </span>
-                <button
-                  onClick={clearAllFilters}
-                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                >
-                  Clear
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Summary Section */}
-        <section>
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
-            Summary
-          </h2>
-          <ReportSummary 
-            summary={namespaceSummary}
-            helmChart={report.config?.helmChart}
-            namespace={report.config?.namespace}
-            timestamp={report.timestamp}
-            includedKinds={includedKinds}
-            includedResourceNames={includedResourceNames}
-            namespaceResourceCount={filteredResults.length}
-          />
-        </section>
-
-        {/* Filters Section */}
-        <section>
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
-            Filters
-          </h2>
-          <Filters
-            selectedStatuses={selectedStatuses}
-            onStatusChange={setSelectedStatuses}
-            selectedActions={selectedActions}
-            onActionChange={setSelectedActions}
-            onClearAll={clearAllFilters}
-          />
-        </section>
-
-        {/* Resources Section */}
-        <section>
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
-            Resources
-          </h2>
-          <ResourceList
-            namespaceResults={filteredResults}
-            totalResults={namespaceResults.length}
-            namespaceLabel={report.config?.namespace}
-          />
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border py-6">
-        <div className="container">
-          <p className="text-xs text-muted-foreground text-center">
-            helm-guard-report-viewer • Read-only validation report viewer
-          </p>
-        </div>
-      </footer>
-    </div>
-  );
+    );
 }
 
 const getKindFromKey = (resourceKey: string): string => {
-  return resourceKey.split("/")[0] ?? "";
+    return resourceKey.split('/')[0] ?? '';
 };
 
 const getNameFromKey = (resourceKey: string): string => {
-  const parts = resourceKey.split("/");
-  return parts.length >= 3 ? parts[2] ?? "" : "";
+    const parts = resourceKey.split('/');
+    return parts.length >= 3 ? (parts[2] ?? '') : '';
 };
 
 const filterResults = (
-  results: ResourceResult[],
-  nameFilter: string,
-  selectedStatuses: ResourceStatus[],
-  selectedActions: DiffAction[]
+    results: ResourceResult[],
+    nameFilter: string,
+    selectedStatuses: ResourceStatus[],
+    selectedActions: DiffAction[],
 ): ResourceResult[] => {
-  const query = nameFilter.trim().toLowerCase();
-  return results.filter(result => {
-    if (query) {
-      const name = getNameFromKey(result.resourceKey).toLowerCase();
-      if (!name.includes(query)) {
-        return false;
-      }
-    }
+    const query = nameFilter.trim().toLowerCase();
+    return results.filter(result => {
+        if (query) {
+            const name = getNameFromKey(result.resourceKey).toLowerCase();
+            if (!name.includes(query)) {
+                return false;
+            }
+        }
 
-    if (selectedStatuses.length > 0 && !selectedStatuses.includes(result.status)) {
-      return false;
-    }
+        if (selectedStatuses.length > 0 && !selectedStatuses.includes(result.status)) {
+            return false;
+        }
 
-    if (selectedActions.length > 0) {
-      if (!result.differences || result.differences.length === 0) {
-        return false;
-      }
-      const hasAction = result.differences.some(diff =>
-        selectedActions.includes(diff.action)
-      );
-      if (!hasAction) {
-        return false;
-      }
-    }
+        if (selectedActions.length > 0) {
+            if (!result.differences || result.differences.length === 0) {
+                return false;
+            }
+            const hasAction = result.differences.some(diff => selectedActions.includes(diff.action));
+            if (!hasAction) {
+                return false;
+            }
+        }
 
-    return true;
-  });
+        return true;
+    });
 };

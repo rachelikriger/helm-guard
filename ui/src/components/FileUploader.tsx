@@ -3,145 +3,147 @@ import { Upload, FileJson, AlertCircle } from 'lucide-react';
 import type { HelmGuardReport } from '@/types/report';
 
 interface FileUploaderProps {
-  onReportLoaded: (report: HelmGuardReport) => void;
+    onReportLoaded: (report: HelmGuardReport) => void;
 }
 
 function isValidReport(report: unknown): report is HelmGuardReport {
-  return Boolean(
-    report &&
-    typeof report === 'object' &&
-    (report as HelmGuardReport).summary &&
-    Array.isArray((report as HelmGuardReport).results)
-  );
+    return Boolean(
+        report &&
+        typeof report === 'object' &&
+        (report as HelmGuardReport).summary &&
+        Array.isArray((report as HelmGuardReport).results),
+    );
 }
 
 export function FileUploader({ onReportLoaded }: FileUploaderProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const processFile = useCallback((file: File) => {
-    setError(null);
+    const processFile = useCallback(
+        (file: File) => {
+            setError(null);
 
-    if (!file.name.endsWith('.json')) {
-      setError('Please upload a JSON file');
-      return;
-    }
+            if (!file.name.endsWith('.json')) {
+                setError('Please upload a JSON file');
+                return;
+            }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const report = JSON.parse(content) as HelmGuardReport;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const content = e.target?.result as string;
+                    const report = JSON.parse(content) as HelmGuardReport;
 
-        // Validate basic structure
-        if (!isValidReport(report)) {
-          setError('Invalid report format: missing summary or results array');
-          return;
-        }
-        
-        onReportLoaded(report);
-      } catch {
-        setError('Failed to parse JSON file');
-      }
-    };
-    reader.onerror = () => setError('Failed to read file');
-    reader.readAsText(file);
-  }, [onReportLoaded]);
+                    // Validate basic structure
+                    if (!isValidReport(report)) {
+                        setError('Invalid report format: missing summary or results array');
+                        return;
+                    }
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
+                    onReportLoaded(report);
+                } catch {
+                    setError('Failed to parse JSON file');
+                }
+            };
+            reader.onerror = () => setError('Failed to read file');
+            reader.readAsText(file);
+        },
+        [onReportLoaded],
+    );
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      processFile(file);
-    }
-  }, [processFile]);
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    }, []);
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processFile(file);
-    }
-  }, [processFile]);
+    const handleDrop = useCallback(
+        (e: React.DragEvent) => {
+            e.preventDefault();
+            setIsDragging(false);
 
-  const handleClick = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                processFile(file);
+            }
+        },
+        [processFile],
+    );
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
-      <div className="text-center mb-8 animate-fade-in">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
-          <FileJson className="w-8 h-8 text-primary" />
-        </div>
-        <h1 className="text-3xl font-semibold text-foreground mb-2">
-          Helm Guard Report Viewer
-        </h1>
-        <p className="text-muted-foreground max-w-md">
-          Upload your validation report to visualize resource differences and drift analysis
-        </p>
-      </div>
+    const handleFileSelect = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (file) {
+                processFile(file);
+            }
+        },
+        [processFile],
+    );
 
-      <div
-        onClick={handleClick}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`
+    const handleClick = useCallback(() => {
+        fileInputRef.current?.click();
+    }, []);
+
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+            <div className="text-center mb-8 animate-fade-in">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
+                    <FileJson className="w-8 h-8 text-primary" />
+                </div>
+                <h1 className="text-3xl font-semibold text-foreground mb-2">Helm Guard Report Viewer</h1>
+                <p className="text-muted-foreground max-w-md">
+                    Upload your validation report to visualize resource differences and drift analysis
+                </p>
+            </div>
+
+            <div
+                onClick={handleClick}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`
           relative w-full max-w-lg p-12 rounded-xl border-2 border-dashed cursor-pointer
           transition-all duration-200 ease-out
-          ${isDragging 
-            ? 'border-primary bg-primary/5 scale-[1.02]' 
-            : 'border-border hover:border-primary/50 hover:bg-muted/50'
+          ${
+              isDragging
+                  ? 'border-primary bg-primary/5 scale-[1.02]'
+                  : 'border-border hover:border-primary/50 hover:bg-muted/50'
           }
         `}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-        
-        <div className="flex flex-col items-center text-center">
-          <div className={`
+            >
+                <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileSelect} className="hidden" />
+
+                <div className="flex flex-col items-center text-center">
+                    <div
+                        className={`
             p-4 rounded-xl mb-4 transition-colors duration-200
             ${isDragging ? 'bg-primary/20' : 'bg-muted'}
-          `}>
-            <Upload className={`w-8 h-8 transition-colors ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
-          </div>
-          <p className="text-foreground font-medium mb-1">
-            Drop your report.json here
-          </p>
-          <p className="text-sm text-muted-foreground">
-            or click to browse files
-          </p>
-        </div>
-      </div>
+          `}
+                    >
+                        <Upload
+                            className={`w-8 h-8 transition-colors ${
+                                isDragging ? 'text-primary' : 'text-muted-foreground'
+                            }`}
+                        />
+                    </div>
+                    <p className="text-foreground font-medium mb-1">Drop your report.json here</p>
+                    <p className="text-sm text-muted-foreground">or click to browse files</p>
+                </div>
+            </div>
 
-      {error && (
-        <div className="mt-4 flex items-center gap-2 text-destructive bg-destructive/10 px-4 py-2 rounded-lg animate-fade-in">
-          <AlertCircle className="w-4 h-4" />
-          <span className="text-sm">{error}</span>
-        </div>
-      )}
+            {error && (
+                <div className="mt-4 flex items-center gap-2 text-destructive bg-destructive/10 px-4 py-2 rounded-lg animate-fade-in">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="text-sm">{error}</span>
+                </div>
+            )}
 
-      <p className="mt-8 text-xs text-muted-foreground">
-        Supports JSON reports generated by helm-guard CLI
-      </p>
-    </div>
-  );
+            <p className="mt-8 text-xs text-muted-foreground">Supports JSON reports generated by helm-guard CLI</p>
+        </div>
+    );
 }
