@@ -14,9 +14,15 @@ export default defineConfig(() => ({
             '@': path.resolve(__dirname, './src'),
         },
     },
+    optimizeDeps: {
+        include: ['@helm-guard/shared'],
+    },
     build: {
         commonjsOptions: {
-            include: [/node_modules/, path.resolve(__dirname, '../shared/dist/**')],
+            include: [
+                /node_modules/,
+                /shared[\\/]dist/,
+            ],
         },
     },
 }));

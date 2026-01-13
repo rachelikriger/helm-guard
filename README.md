@@ -1,5 +1,5 @@
-﻿````md
-# 🛡️ helm-guard
+````md
+# ??? helm-guard
 
 **helm-guard** is a lightweight validation tool that compares
 **Helm-rendered manifests** against **live OpenShift resources**
@@ -78,7 +78,7 @@ node dist/index.js \
   --output report.json
 ````
 
-> ⚠️ **Important**
+> ?? **Important**
 > helm-guard is only as accurate as the Helm context you provide.
 > Always pass the same `--release`, `--values`, and `--set` inputs used in deployment.
 
@@ -134,8 +134,8 @@ https://helm-guard-ui/?reportUrl=<artifact-url>
 
 helm-guard is packaged as two images:
 
-* **CLI image** – runs the validation logic
-* **UI image** – serves the report viewer
+* **CLI image** � runs the validation logic
+* **UI image** � serves the report viewer
 
 CI and production environments run the CLI image directly.
 Dockerfiles are provided for OpenShift deployment.
@@ -186,11 +186,14 @@ The UI renders the report and contains no normalization logic.
 
 ```
 helm-guard/
-├── cli/        # Validation engine (CLI)
-├── shared/     # JSON report contract
-├── ui/         # Report viewer (static UI)
-└── README.md
+??? cli/        # Validation engine (CLI)
+??? shared/     # JSON report contract
+??? ui/         # Report viewer (static UI)
+??? README.md
 ```
+
+`@helm-guard/shared` is an internal package consumed via `node_modules` only.
+Build `shared` before `cli` and `ui` (or let its `prepare` script build it).
 
 ---
 
@@ -198,7 +201,9 @@ helm-guard/
 
 helm-guard is a **guardrail**, not a deployment tool.
 
-If it passes — you can deploy with confidence.
-If it fails — it tells you exactly why.
+If it passes � you can deploy with confidence.
+If it fails � it tells you exactly why.
 
 ```
+
+
