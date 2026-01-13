@@ -14,12 +14,12 @@
   },
   "summary": {
     "total": 6,
-    "matched": 2,
-    "drifted": 2,
+    "matched": 1,
+    "drifted": 3,
     "missingLive": 1,
     "missingHelm": 1,
     "warnings": 1,
-    "failures": 3
+    "failures": 5
   },
   "results": [
     {
@@ -46,8 +46,20 @@
     },
     {
       "resourceKey": "Deployment/prep/orders-api",
-      "status": "MATCH",
-      "differences": []
+      "status": "DRIFT",
+      "differences": [
+        {
+          "path": "metadata.labels.app.kubernetes.io/managed-by",
+          "liveValue": "ArgoCD",
+          "action": "FAIL"
+        },
+        {
+          "path": "spec.template.spec.terminationGracePeriodSeconds",
+          "helmValue": 30,
+          "liveValue": 60,
+          "action": "FAIL"
+        }
+      ]
     },
     {
       "resourceKey": "Service/prep/orders-api",

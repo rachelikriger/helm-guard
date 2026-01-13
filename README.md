@@ -20,7 +20,7 @@ It:
 - Renders manifests using `helm template`
 - Derives a whitelist of kinds from the rendered Helm output
 - Fetches live, namespace-scoped resources from OpenShift **only for those kinds**
-- Normalizes noisy/system fields and conservative platform defaults
+- Normalizes noisy/system fields and safe, path-specific platform defaults
 - Performs a **semantic comparison** (not a raw YAML diff)
 - Produces a clear validation result for CI and humans
 
@@ -147,22 +147,23 @@ Dockerfiles are provided for OpenShift deployment.
 1. Render the Helm chart using the provided inputs.
 2. Derive the unique kind whitelist from the rendered output.
 3. Fetch live OpenShift resources **only** for the whitelisted kinds in the namespace.
-4. Apply conservative platform-default suppression before diffing:
-   - When Helm omits a field and the live value equals a known default, the diff is suppressed.
+4. Apply platform default normalization before diffing:
+   - Only path-specific, explicitly documented defaults are normalized.
 5. Build `report.json` from the Helm output, whitelisted live resources, and normalized diffs.
 
-## Extending Normalization Rules
+## Platform default normalization
 
-Platform-default suppression rules live in:
+helm-guard suppresses diffs only when Helm omits a field **and** the live value matches
+an explicit, path-specific default. This reduces noise without hiding ownership or intent.
+Defaults are conservative by design: when in doubt, helm-guard keeps the diff.
 
-- `cli/src/domain/platformDefaultRules.ts`
+Rules live in `cli/src/domain/normalization/platformDefaultRules.ts` and are **explicit and conservative**.
+Normalization decisions are made in `cli/src/domain/normalization/shouldSuppressDiff.ts`.
+Add new rules by appending a single entry to the registry only when the live value is a stable, safe default.
 
-Rules are **explicit and conservative**. Each entry defines:
-
-- `path` - the exact diff path to match
-- `defaultValue` - the live value that is safe to treat as a default
-
-Only add rules when you can confirm the live value is a stable default across clusters.
+All platform default suppression lives under `cli/src/domain/normalization`.
+`shared` contains contracts only.
+The UI renders the report and contains no normalization logic.
 
 ---
 

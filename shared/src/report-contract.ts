@@ -35,11 +35,6 @@ export interface ResourceResult {
     differences: DiffItem[];
 }
 
-export interface NormalizationRule {
-    path: DiffPath;
-    defaultValue: unknown;
-}
-
 export interface ReportConfig {
     helmChart: string;
     namespace: string;

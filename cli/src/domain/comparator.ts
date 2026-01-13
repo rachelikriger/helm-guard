@@ -1,7 +1,7 @@
 import { diff, Diff } from 'deep-diff';
 import { ComparisonResult, DIFF_ACTION, DiffActionInternal, K8sResource, ResourceStatus } from './types';
-import { normalize } from './normalizer';
-import { shouldSuppressDiff } from './applyPlatformDefaults';
+import { normalizeResource } from './resourceNormalizer';
+import { shouldSuppressDiff } from './normalization/shouldSuppressDiff';
 export const compareResources = (
     helm: K8sResource[],
     live: K8sResource[],
@@ -10,8 +10,8 @@ export const compareResources = (
 ): ComparisonResult[] => {
     const results: ComparisonResult[] = [];
 
-    const helmResources = helm.map(normalize).map(resource => applyNamespaceFallback(resource, targetNamespace));
-    const liveResources = live.map(normalize).filter(resource => isNamespaceMatch(resource, targetNamespace));
+    const helmResources = helm.map(normalizeResource).map(resource => applyNamespaceFallback(resource, targetNamespace));
+    const liveResources = live.map(normalizeResource).filter(resource => isNamespaceMatch(resource, targetNamespace));
 
     const helmMap = mapByKey(helmResources);
     const liveMap = mapByKey(liveResources);
@@ -39,7 +39,7 @@ export const compareResources = (
             .map(d => {
                 const path = formatDiffPath(d.path);
                 const { helmValue, liveValue } = extractDiffValues(d);
-                if (shouldSuppressDiff(path, helmValue, liveValue)) {
+                if (shouldSuppressDiff(helmRes.kind, path, helmValue, liveValue)) {
                     return {
                         path,
                         helmValue,

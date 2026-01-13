@@ -1,6 +1,12 @@
+/**
+ * Resource cleanup only.
+ * Do NOT add platform default suppression here.
+ * Platform defaults live under domain/normalization.
+ */
+
 import { K8sResource } from './types';
 
-const IGNORED_METADATA_FIELDS = ['uid', 'resourceVersion', 'creationTimestamp', 'generation', 'managedFields'];
+const IGNORED_METADATA_FIELDS = ['uid', 'resourceVersion', 'generation', 'managedFields'];
 
 const IGNORED_METADATA_ANNOTATIONS = new Set([
     'deployment.kubernetes.io/revision',
@@ -9,7 +15,9 @@ const IGNORED_METADATA_ANNOTATIONS = new Set([
     'meta.helm.sh/release-namespace',
 ]);
 
-export const normalize = (resource: K8sResource): K8sResource => {
+type ResourceNormalizer = (resource: K8sResource) => K8sResource;
+
+export const normalizeResource: ResourceNormalizer = (resource: K8sResource): K8sResource => {
     const clone = structuredClone(resource);
 
     delete clone.status;

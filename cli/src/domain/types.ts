@@ -5,7 +5,6 @@ import {
     HelmGuardReport,
     K8sKind,
     Mode,
-    NormalizationRule,
     ReportConfig,
     ReportSummary,
     ResourceIdentifier,
@@ -88,7 +87,6 @@ export type {
     ReportDiffAction as DiffAction,
     Mode,
     K8sKind,
-    NormalizationRule,
     DiffPath,
 };
 

@@ -5,7 +5,6 @@ export type {
   HelmGuardReport,
   K8sKind,
   Mode,
-  NormalizationRule,
   ReportConfig,
   ReportSchema,
   ReportSummary,
