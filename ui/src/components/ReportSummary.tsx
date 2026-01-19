@@ -79,7 +79,7 @@ export function ReportSummary({
                 <div className="text-xs text-muted-foreground">
                     Compared Helm-rendered manifests to live OpenShift resources in the target namespace.
                 </div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider">Resource Coverage</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider">What was detected</div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                     <SummaryCard
                         label="Resources compared"
@@ -117,13 +117,17 @@ export function ReportSummary({
                         variant="missing-helm"
                     />
                 </div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Change Severity</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Deployment impact</div>
+                <p className="text-xs text-muted-foreground">
+                    Deployment impact: Failures include Missing Live, Missing Helm, and any FAIL drift. Warnings are
+                    WARN drift only.
+                </p>
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-3">
                     <SummaryCard
                         label="Warnings"
                         value={summary.warnings}
                         icon={<AlertTriangle className="w-4 h-4" />}
-                        description="Non-breaking drift; review before deploy."
+                        description="Non-blocking drift (deployment allowed)."
                         variant="warn"
                         className={summary.failures === 0 ? 'opacity-85' : ''}
                         iconClassName={summary.failures === 0 ? 'opacity-80' : ''}
@@ -132,7 +136,7 @@ export function ReportSummary({
                         label="Failures"
                         value={summary.failures}
                         icon={<XCircle className="w-4 h-4" />}
-                        description="Breaking or unsafe drift; block deployment."
+                        description="Blocking drift or missing resources (deployment blocked)."
                         variant="fail"
                         className={summary.failures > 0 ? 'ring-1 ring-action-fail/40 border-action-fail/40' : ''}
                     />
