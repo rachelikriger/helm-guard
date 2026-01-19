@@ -151,21 +151,16 @@ Dockerfiles are provided for OpenShift deployment.
    - Only path-specific, explicitly documented defaults are normalized.
 5. Build `report.json` from the Helm output, whitelisted live resources, and normalized diffs.
 
-## Platform default normalization
+## Normalization (mental model)
 
-helm-guard suppresses diffs only when Helm omits a field **and** the live value matches
-an explicit, path-specific default. This reduces noise without hiding ownership or intent.
-Defaults are conservative by design: when in doubt, helm-guard keeps the diff.
+Normalization runs in three phases, in order:
 
-Rules live in `cli/src/domain/normalization/platformDefaultRules.ts` and are **explicit and conservative**.
-Normalization decisions are made in `cli/src/domain/normalization/shouldSuppressDiff.ts`.
-Add new rules by appending a single entry to the registry only when the live value is a stable, safe default.
-Examples include empty `metadata.annotations` maps and default `spec.template.spec.dnsPolicy: "ClusterFirst"` values.
+1. Resource cleanup (technical normalization) in `cli/src/domain/normalization/resourceNormalizer.ts`
+2. Diff gating (single decision point) in `cli/src/domain/normalization/shouldIncludeDiff.ts`
+3. Platform default rules (knowledge base) in `cli/src/domain/normalization/platformDefaultRules.ts`
 
-All platform default suppression lives under `cli/src/domain/normalization`.
-The CLI also enforces semantic equality in comparisons (equal values never appear as diffs, even with numeric string vs number).
-`shared` contains contracts only.
-The UI renders the report and contains no normalization logic.
+To add a new default suppression, append a rule to `cli/src/domain/normalization/platformDefaultRules.ts`.
+All normalization lives under `cli/src/domain/normalization`; `shared` contains contracts only and the UI only renders reports.
 
 ---
 
@@ -207,5 +202,7 @@ If it passes — you can deploy with confidence.
 If it fails — it tells you exactly why.
 
 ```
+
+
 
 

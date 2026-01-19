@@ -4,7 +4,7 @@
  * Platform defaults live under domain/normalization.
  */
 
-import { K8sResource } from './types';
+import { K8sResource } from '../types';
 
 const IGNORED_METADATA_FIELDS = ['uid', 'resourceVersion', 'generation', 'managedFields'];
 

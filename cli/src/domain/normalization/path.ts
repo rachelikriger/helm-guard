@@ -11,7 +11,7 @@ export const normalizePath = (path: DiffPath): DiffPath => {
         .join('.');
 };
 
-export const formatDiffPath = (segments: Array<string | number> | undefined, arrayIndex?: number): DiffPath => {
+export const fromSegmentsToPath = (segments: Array<string | number> | undefined, arrayIndex?: number): DiffPath => {
     if (!Array.isArray(segments)) {
         return '';
     }

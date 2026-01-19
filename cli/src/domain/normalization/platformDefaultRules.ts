@@ -1,12 +1,17 @@
-import { PlatformDefaultRule } from './types';
-import {
-    matchDefaultRollingUpdateStrategy,
-    matchEmptyObject,
-    matchExactObject,
-    matchExactValue,
-    matchNullValue,
-    matchObjectWithNullCreationTimestamp,
-} from './matchers';
+import { DiffPath, K8sKind } from '@helm-guard/shared';
+import { deepEqual } from './equality';
+
+type ValueMatcher = (value: unknown) => boolean;
+
+export type PlatformDefaultRule = Readonly<{
+    path: DiffPath;
+    matches: ValueMatcher;
+    resourceKinds?: readonly K8sKind[];
+}>;
+
+const matchNullOrEmpty: ValueMatcher = (value: unknown): boolean => {
+    return value === null || (isPlainObject(value) && Object.keys(value).length === 0);
+};
 
 const CONTROLLER_POD_TEMPLATE_KINDS: PlatformDefaultRule['resourceKinds'] = [
     'Deployment',
@@ -26,209 +31,193 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
     // Metadata defaults
     {
         path: 'metadata.creationTimestamp',
-        reason: 'System-generated fields can appear as null in API responses.',
-        matcher: matchNullValue,
-        expectation: 'null',
+        matches: matchNullValue,
     },
     {
         path: 'metadata.annotations',
-        reason: 'Kubernetes often materializes empty annotations maps.',
-        matcher: matchEmptyObject,
-        expectation: '{}',
+        matches: matchEmptyObject,
     },
     {
         path: 'metadata.labels',
-        reason: 'Helm-added ownership metadata should not trigger drift when it is the only label.',
-        matcher: matchExactObject({ 'app.kubernetes.io/managed-by': 'Helm' }),
-        expectation: '{"app.kubernetes.io/managed-by":"Helm"}',
+        matches: matchExactObject({ 'app.kubernetes.io/managed-by': 'Helm' }),
     },
     // Generic spec defaults
     {
         path: 'spec.nodeSelector',
-        reason: 'Absent nodeSelector can be materialized as null.',
-        matcher: matchNullValue,
-        expectation: 'null',
+        matches: matchNullValue,
     },
     {
         path: 'spec.strategy',
         resourceKinds: DEPLOYMENT_KINDS,
-        reason: 'Deployment default rolling update strategy.',
-        matcher: matchDefaultRollingUpdateStrategy,
-        expectation: '{type: "RollingUpdate", rollingUpdate: {maxSurge: "25%", maxUnavailable: "25%"}}',
+        matches: matchDefaultRollingUpdateStrategy,
     },
     // BuildConfig defaults (OpenShift)
     {
         path: 'spec.failedBuildsHistoryLimit',
         resourceKinds: BUILD_CONFIG_KINDS,
-        reason: 'OpenShift default failed build history limit.',
-        matcher: matchExactValue(5),
-        expectation: '5',
+        matches: matchExactValue(5),
     },
     {
         path: 'spec.successfulBuildsHistoryLimit',
         resourceKinds: BUILD_CONFIG_KINDS,
-        reason: 'OpenShift default successful build history limit.',
-        matcher: matchExactValue(5),
-        expectation: '5',
+        matches: matchExactValue(5),
     },
     {
         path: 'spec.runPolicy',
         resourceKinds: BUILD_CONFIG_KINDS,
-        reason: 'OpenShift default BuildConfig run policy.',
-        matcher: matchExactValue('Serial'),
-        expectation: '"Serial"',
+        matches: matchExactValue('Serial'),
     },
     {
         path: 'spec.postCommit',
         resourceKinds: BUILD_CONFIG_KINDS,
-        reason: 'Empty postCommit hook is equivalent to no postCommit.',
-        matcher: matchEmptyObject,
-        expectation: '{}',
+        matches: matchEmptyObject,
     },
     // CronJob history defaults
     {
         path: 'spec.failedJobsHistoryLimit',
         resourceKinds: CRONJOB_KINDS,
-        reason: 'Kubernetes default failed job history for CronJob.',
-        matcher: matchExactValue(1),
-        expectation: '1',
+        matches: matchExactValue(1),
     },
     {
         path: 'spec.successfulJobHistoryLimit',
         resourceKinds: CRONJOB_KINDS,
-        reason: 'Kubernetes default successful job history for CronJob.',
-        matcher: matchExactValue(3),
-        expectation: '3',
+        matches: matchExactValue(3),
     },
     // CronJob jobTemplate defaults
     {
         path: 'spec.jobTemplate.metadata',
         resourceKinds: CRONJOB_KINDS,
-        reason: 'JobTemplate metadata may contain only a null creationTimestamp.',
-        matcher: matchObjectWithNullCreationTimestamp,
-        expectation: '{creationTimestamp: null}',
+        matches: matchObjectWithNullCreationTimestamp,
     },
     {
         path: 'spec.jobTemplate.metadata.creationTimestamp',
         resourceKinds: CRONJOB_KINDS,
-        reason: 'JobTemplate creationTimestamp is system-generated.',
-        matcher: matchNullValue,
-        expectation: 'null',
+        matches: matchNullValue,
     },
     {
         path: 'spec.jobTemplate.spec.template.spec.dnsPolicy',
         resourceKinds: CRONJOB_KINDS,
-        reason: 'Kubernetes default DNS policy for CronJob pod templates.',
-        matcher: matchExactValue('ClusterFirst'),
-        expectation: '"ClusterFirst"',
+        matches: matchExactValue('ClusterFirst'),
     },
     {
         path: 'spec.jobTemplate.spec.template.spec.schedulerName',
         resourceKinds: CRONJOB_KINDS,
-        reason: 'Kubernetes default scheduler name for CronJob pods.',
-        matcher: matchExactValue('default-scheduler'),
-        expectation: '"default-scheduler"',
+        matches: matchExactValue('default-scheduler'),
     },
     {
         path: 'spec.jobTemplate.spec.template.spec.securityContext',
         resourceKinds: CRONJOB_KINDS,
-        reason: 'Absent pod securityContext is represented as an empty object.',
-        matcher: matchEmptyObject,
-        expectation: '{}',
+        matches: matchEmptyObject,
     },
     {
         path: 'spec.jobTemplate.spec.template.spec.terminationGracePeriodSeconds',
         resourceKinds: CRONJOB_KINDS,
-        reason: 'Kubernetes default termination grace period for CronJob pods.',
-        matcher: matchExactValue(30),
-        expectation: '30',
+        matches: matchExactValue(30),
     },
     {
         path: 'spec.jobTemplate.spec.template.spec.containers.*.terminationMessagePath',
         resourceKinds: CRONJOB_KINDS,
-        reason: 'Kubernetes default termination log path for CronJob pods.',
-        matcher: matchExactValue('/dev/termination-log'),
-        expectation: '"/dev/termination-log"',
+        matches: matchExactValue('/dev/termination-log'),
     },
     {
         path: 'spec.jobTemplate.spec.template.spec.containers.*.terminationMessagePolicy',
         resourceKinds: CRONJOB_KINDS,
-        reason: 'Kubernetes default termination message policy for CronJob pods.',
-        matcher: matchExactValue('File'),
-        expectation: '"File"',
+        matches: matchExactValue('File'),
     },
     // Pod template defaults
     {
         path: 'spec.template.metadata',
-        reason: 'Pod template metadata may contain only a null creationTimestamp.',
-        matcher: matchObjectWithNullCreationTimestamp,
-        expectation: '{creationTimestamp: null}',
+        matches: matchObjectWithNullCreationTimestamp,
     },
     {
         path: 'spec.template.metadata.creationTimestamp',
-        reason: 'Pod template creationTimestamp is system-generated.',
-        matcher: matchNullValue,
-        expectation: 'null',
+        matches: matchNullValue,
     },
     {
         path: 'spec.template.spec.dnsPolicy',
-        reason: 'Kubernetes default DNS policy for pod templates.',
-        matcher: matchExactValue('ClusterFirst'),
-        expectation: '"ClusterFirst"',
+        matches: matchExactValue('ClusterFirst'),
     },
     {
         path: 'spec.template.spec.restartPolicy',
         resourceKinds: CONTROLLER_POD_TEMPLATE_KINDS,
-        reason: 'Controller pod templates default to Always; jobs use different defaults.',
-        matcher: matchExactValue('Always'),
-        expectation: '"Always"',
+        matches: matchExactValue('Always'),
     },
     {
         path: 'spec.template.spec.schedulerName',
-        reason: 'Kubernetes default scheduler name.',
-        matcher: matchExactValue('default-scheduler'),
-        expectation: '"default-scheduler"',
+        matches: matchExactValue('default-scheduler'),
     },
     {
         path: 'spec.template.spec.securityContext',
-        reason: 'Absent pod securityContext is represented as null.',
-        matcher: matchNullValue,
-        expectation: 'null',
-    },
-    {
-        path: 'spec.template.spec.securityContext',
-        reason: 'Absent pod securityContext is represented as an empty object.',
-        matcher: matchEmptyObject,
-        expectation: '{}',
+        matches: matchNullOrEmpty,
     },
     {
         path: 'spec.template.spec.nodeSelector',
-        reason: 'Absent nodeSelector is represented as null.',
-        matcher: matchNullValue,
-        expectation: 'null',
+        matches: matchNullValue,
     },
     {
         path: 'spec.template.spec.terminationGracePeriodSeconds',
-        reason: 'Kubernetes default termination grace period.',
-        matcher: matchExactValue(30),
-        expectation: '30',
+        matches: matchExactValue(30),
     },
     {
         path: 'spec.template.spec.containers.*.terminationMessagePath',
-        reason: 'Kubernetes default termination log path.',
-        matcher: matchExactValue('/dev/termination-log'),
-        expectation: '"/dev/termination-log"',
+        matches: matchExactValue('/dev/termination-log'),
     },
     {
         path: 'spec.template.spec.containers.*.terminationMessagePolicy',
-        reason: 'Kubernetes default termination message policy.',
-        matcher: matchExactValue('File'),
-        expectation: '"File"',
+        matches: matchExactValue('File'),
     },
     {
         path: 'spec.template.spec.containers.*.imagePullPolicy',
-        reason: 'Kubernetes default imagePullPolicy when tag is latest or omitted (no inference).',
-        matcher: matchExactValue('Always'),
-        expectation: '"Always"',
+        matches: matchExactValue('Always'),
     },
 ];
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function matchNullValue(value: unknown): boolean {
+    return value === null;
+}
+
+export function matchEmptyObject(value: unknown): boolean {
+    return isPlainObject(value) && Object.keys(value).length === 0;
+}
+
+function matchExactValue<T extends string | number | boolean>(expected: T): ValueMatcher {
+    return (value: unknown): boolean => value === expected;
+}
+
+function matchExactObject<T extends Record<string, unknown>>(expected: T): ValueMatcher {
+    return (value: unknown): boolean => deepEqual(value, expected);
+}
+
+export function matchObjectWithNullCreationTimestamp(value: unknown): boolean {
+    if (!isPlainObject(value)) {
+        return false;
+    }
+    const keys = Object.keys(value);
+    return keys.length === 1 && value.creationTimestamp === null;
+}
+
+function matchDefaultRollingUpdateStrategy(value: unknown): boolean {
+    if (!isPlainObject(value)) {
+        return false;
+    }
+    const keys = Object.keys(value);
+    if (keys.length !== 2) {
+        return false;
+    }
+    if (value.type !== 'RollingUpdate') {
+        return false;
+    }
+    const rollingUpdate = value.rollingUpdate;
+    if (!isPlainObject(rollingUpdate)) {
+        return false;
+    }
+    const rollingKeys = Object.keys(rollingUpdate);
+    if (rollingKeys.length !== 2) {
+        return false;
+    }
+    return rollingUpdate.maxSurge === '25%' && rollingUpdate.maxUnavailable === '25%';
+}

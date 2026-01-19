@@ -3,7 +3,7 @@ import { Command } from 'commander';
 import { MODE, Mode } from './domain/types';
 import type { ReportConfig } from './domain/types';
 import { printReport } from './boundaries/reporter';
-import { buildReport } from './domain/buildReport';
+import { buildReport, NORMALIZATION_VERSION } from './domain/buildReport';
 import { validateHelmRenderOptions, validateInputs } from './validation/cli';
 import { runBootstrapComparison, runHelmManagedComparison } from './comparisonStrategies';
 
@@ -52,6 +52,8 @@ const main = async (): Promise<void> => {
     try {
         program.parse();
         const opts = program.opts<CliOptions>();
+
+        console.log(`helm-guard normalizationVersion=${NORMALIZATION_VERSION}`);
 
         const mode = validateInputs(opts.chart, opts.namespace, opts.mode);
         const helmRenderOptions = validateHelmRenderOptions(opts.release, opts.values, opts.set);

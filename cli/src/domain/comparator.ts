@@ -1,8 +1,8 @@
 import { diff, Diff } from 'deep-diff';
 import { ComparisonResult, DIFF_ACTION, DiffActionInternal, K8sResource, ResourceStatus } from './types';
-import { normalizeResource } from './resourceNormalizer';
-import { shouldSuppressDiff } from './normalization/shouldSuppressDiff';
-import { formatDiffPath } from './normalization/path';
+import { normalizeResource } from './normalization/resourceNormalizer';
+import { shouldIncludeDiff } from './normalization/shouldIncludeDiff';
+import { fromSegmentsToPath } from './normalization/path';
 export const compareResources = (
     helm: K8sResource[],
     live: K8sResource[],
@@ -35,20 +35,13 @@ export const compareResources = (
             continue;
         }
 
+        // Diff lifecycle: deep-diff candidate -> format path -> shouldIncludeDiff gate -> report entry.
         const diffs = diff<K8sResource, K8sResource>(helmRes, liveRes) ?? [];
         const differences = diffs
             .map(d => {
-                const path = formatDiffPath(d.path, d.kind === 'A' ? d.index : undefined);
+                const path = fromSegmentsToPath(d.path, d.kind === 'A' ? d.index : undefined);
                 const { helmValue, liveValue } = extractDiffValues(d);
-                if (areSemanticallyEqual(helmValue, liveValue)) {
-                    return {
-                        path,
-                        helmValue,
-                        liveValue,
-                        action: DIFF_ACTION.IGNORE,
-                    };
-                }
-                if (shouldSuppressDiff(helmRes.kind, path, helmValue, liveValue)) {
+                if (!shouldIncludeDiff({ resourceKind: helmRes.kind, path, helmValue, liveValue })) {
                     return {
                         path,
                         helmValue,
@@ -121,49 +114,6 @@ type ReportableAction = Exclude<DiffActionInternal, typeof DIFF_ACTION.IGNORE>;
 
 const isReportAction = <T extends { action: DiffActionInternal }>(diff: T): diff is T & { action: ReportableAction } =>
     diff.action !== DIFF_ACTION.IGNORE;
-
-const areSemanticallyEqual = (left: unknown, right: unknown): boolean => {
-    if (left === right) {
-        return true;
-    }
-
-    if (left === null || right === null || left === undefined || right === undefined) {
-        return false;
-    }
-
-    if (typeof left === 'number' && typeof right === 'string') {
-        return isNumericString(right) && left === Number(right);
-    }
-    if (typeof left === 'string' && typeof right === 'number') {
-        return isNumericString(left) && right === Number(left);
-    }
-
-    if (Array.isArray(left) && Array.isArray(right)) {
-        if (left.length !== right.length) {
-            return false;
-        }
-        return left.every((value, index) => areSemanticallyEqual(value, right[index]));
-    }
-
-    if (isPlainObject(left) && isPlainObject(right)) {
-        const leftKeys = Object.keys(left);
-        const rightKeys = Object.keys(right);
-        if (leftKeys.length !== rightKeys.length) {
-            return false;
-        }
-        return leftKeys.every(key => Object.prototype.hasOwnProperty.call(right, key) && areSemanticallyEqual(left[key], right[key]));
-    }
-
-    return false;
-};
-
-const isNumericString = (value: string): boolean => {
-    return /^-?\d+(\.\d+)?$/.test(value.trim());
-};
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> => {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-};
 
 const mapByKey = (resources: K8sResource[]): Map<string, K8sResource> => {
     return new Map(resources.map(r => [buildResourceKey(r), r]));
