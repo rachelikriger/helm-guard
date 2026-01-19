@@ -35,10 +35,12 @@ export function ResourceCard({ resource, index, namespaceFallback }: ResourceCar
           cursor-pointer
         `}
             >
-                <div className="flex items-center gap-4 min-w-0">
-                    <StatusBadge status={resource.status} />
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center min-w-[7.5rem]">
+                        <StatusBadge status={resource.status} />
+                    </div>
                     <div className="min-w-0">
-                        <span className="text-xs text-muted-foreground uppercase tracking-wider">{parsed.kind}</span>
+                        <span className="text-xs text-muted-foreground/70 uppercase tracking-wider">{parsed.kind}</span>
                         <p className="font-mono text-sm truncate text-foreground">
                             {parsed.namespace && <span className="text-muted-foreground">{parsed.namespace}/</span>}
                             {parsed.name}
