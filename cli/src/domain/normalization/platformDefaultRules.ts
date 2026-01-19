@@ -2,6 +2,7 @@ import { PlatformDefaultRule } from './types';
 import {
     matchDefaultRollingUpdateStrategy,
     matchEmptyObject,
+    matchExactObject,
     matchExactValue,
     matchNullValue,
     matchObjectWithNullCreationTimestamp,
@@ -36,10 +37,10 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         expectation: '{}',
     },
     {
-        path: 'metadata.labels.app.kubernetes.io/managed-by',
-        reason: 'Helm-added ownership metadata should not trigger drift when omitted.',
-        matcher: matchExactValue('Helm'),
-        expectation: '"Helm"',
+        path: 'metadata.labels',
+        reason: 'Helm-added ownership metadata should not trigger drift when it is the only label.',
+        matcher: matchExactObject({ 'app.kubernetes.io/managed-by': 'Helm' }),
+        expectation: '{"app.kubernetes.io/managed-by":"Helm"}',
     },
     // Generic spec defaults
     {

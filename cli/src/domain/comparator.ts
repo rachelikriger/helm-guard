@@ -2,6 +2,7 @@ import { diff, Diff } from 'deep-diff';
 import { ComparisonResult, DIFF_ACTION, DiffActionInternal, K8sResource, ResourceStatus } from './types';
 import { normalizeResource } from './resourceNormalizer';
 import { shouldSuppressDiff } from './normalization/shouldSuppressDiff';
+import { formatDiffPath } from './normalization/path';
 export const compareResources = (
     helm: K8sResource[],
     live: K8sResource[],
@@ -37,7 +38,7 @@ export const compareResources = (
         const diffs = diff<K8sResource, K8sResource>(helmRes, liveRes) ?? [];
         const differences = diffs
             .map(d => {
-                const path = formatDiffPath(d.path);
+                const path = formatDiffPath(d.path, d.kind === 'A' ? d.index : undefined);
                 const { helmValue, liveValue } = extractDiffValues(d);
                 if (areSemanticallyEqual(helmValue, liveValue)) {
                     return {
@@ -120,11 +121,6 @@ type ReportableAction = Exclude<DiffActionInternal, typeof DIFF_ACTION.IGNORE>;
 
 const isReportAction = <T extends { action: DiffActionInternal }>(diff: T): diff is T & { action: ReportableAction } =>
     diff.action !== DIFF_ACTION.IGNORE;
-
-const formatDiffPath = (path: Array<string | number> | undefined): string => {
-    if (!Array.isArray(path)) return '';
-    return path.map(segment => String(segment)).join('.');
-};
 
 const areSemanticallyEqual = (left: unknown, right: unknown): boolean => {
     if (left === right) {
