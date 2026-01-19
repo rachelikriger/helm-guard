@@ -160,8 +160,10 @@ Defaults are conservative by design: when in doubt, helm-guard keeps the diff.
 Rules live in `cli/src/domain/normalization/platformDefaultRules.ts` and are **explicit and conservative**.
 Normalization decisions are made in `cli/src/domain/normalization/shouldSuppressDiff.ts`.
 Add new rules by appending a single entry to the registry only when the live value is a stable, safe default.
+Examples include empty `metadata.annotations` maps and default `spec.template.spec.dnsPolicy: "ClusterFirst"` values.
 
 All platform default suppression lives under `cli/src/domain/normalization`.
+The CLI also enforces semantic equality in comparisons (equal values never appear as diffs, even with numeric string vs number).
 `shared` contains contracts only.
 The UI renders the report and contains no normalization logic.
 

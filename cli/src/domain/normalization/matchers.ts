@@ -11,6 +11,36 @@ export const matchExactValue =
     (value: unknown): boolean =>
         value === expected;
 
+export const matchObjectWithNullCreationTimestamp: ValueMatcher = (value: unknown): boolean => {
+    if (!isPlainObject(value)) {
+        return false;
+    }
+    const keys = Object.keys(value);
+    return keys.length === 1 && value.creationTimestamp === null;
+};
+
+export const matchDefaultRollingUpdateStrategy: ValueMatcher = (value: unknown): boolean => {
+    if (!isPlainObject(value)) {
+        return false;
+    }
+    const keys = Object.keys(value);
+    if (keys.length !== 2) {
+        return false;
+    }
+    if (value.type !== 'RollingUpdate') {
+        return false;
+    }
+    const rollingUpdate = value.rollingUpdate;
+    if (!isPlainObject(rollingUpdate)) {
+        return false;
+    }
+    const rollingKeys = Object.keys(rollingUpdate);
+    if (rollingKeys.length !== 2) {
+        return false;
+    }
+    return rollingUpdate.maxSurge === '25%' && rollingUpdate.maxUnavailable === '25%';
+};
+
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 };
