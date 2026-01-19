@@ -1,7 +1,5 @@
 import { ComparisonResult, CountableAction, DIFF_ACTION, HelmGuardReport, ReportConfig, ResourceStatus } from './types';
 
-export const NORMALIZATION_VERSION = 'f67e152083e9';
-
 export const buildReport = (results: ComparisonResult[], config: ReportConfig): HelmGuardReport => {
     const summary = {
         total: results.length,
@@ -18,7 +16,6 @@ export const buildReport = (results: ComparisonResult[], config: ReportConfig): 
 
     return {
         schemaVersion: 1,
-        normalizationVersion: NORMALIZATION_VERSION,
         timestamp: new Date().toISOString(),
         config,
         summary,

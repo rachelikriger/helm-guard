@@ -1,5 +1,5 @@
 import { DiffPath, K8sKind } from '@helm-guard/shared';
-import { matchEmptyObject, matchObjectWithNullCreationTimestamp, PLATFORM_DEFAULT_RULES } from './platformDefaultRules';
+import { PLATFORM_DEFAULT_RULES } from './platformDefaultRules';
 import { semanticallyEqual } from './equality';
 import { normalizePath } from './path';
 
@@ -59,4 +59,20 @@ const toWildcardRegex = (pattern: DiffPath): RegExp => {
     const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const withWildcards = escaped.replace(/\\\*/g, '[0-9]+');
     return new RegExp(`^${withWildcards}$`);
+};
+
+const matchEmptyObject = (value: unknown): boolean => {
+    return isPlainObject(value) && Object.keys(value).length === 0;
+};
+
+const matchObjectWithNullCreationTimestamp = (value: unknown): boolean => {
+    if (!isPlainObject(value)) {
+        return false;
+    }
+    const keys = Object.keys(value);
+    return keys.length === 1 && value.creationTimestamp === null;
+};
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
 };

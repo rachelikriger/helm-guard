@@ -1,5 +1,4 @@
-````md
-# ??? helm-guard
+# helm-guard
 
 **helm-guard** is a lightweight validation tool that compares
 **Helm-rendered manifests** against **live OpenShift resources**
@@ -42,7 +41,7 @@ Use helm-guard as a **pre-deployment gate**:
 helm-guard produces:
 
 - **Console summary** (human-readable)
-- **Optional JSON report** (for CI artifacts & UI visualization)
+- **Optional JSON report** (for CI artifacts and UI visualization)
 
 Exit codes are CI-friendly:
 
@@ -76,9 +75,9 @@ node dist/index.js \
   --values values.prod.yaml \
   --set image.tag=1.2.3 \
   --output report.json
-````
+```
 
-> ?? **Important**
+> **Important**
 > helm-guard is only as accurate as the Helm context you provide.
 > Always pass the same `--release`, `--values`, and `--set` inputs used in deployment.
 
@@ -86,17 +85,19 @@ node dist/index.js \
 
 ### CLI Options
 
-| Option        | Description                                  |
-| ------------- | -------------------------------------------- |
-| `--chart`     | Path to Helm chart                           |
-| `--namespace` | Target OpenShift namespace                   |
-| `--release`   | Helm release name                            |
-| `--values`    | Helm values file (repeatable, order matters) |
-| `--set`       | Helm set value (repeatable, key=value)       |
-| `--strict`    | Treat all diffs as blocking                  |
-| `--output`    | Write JSON report to file                    |
+| Option        | Description                                                        |
+| ------------- | ------------------------------------------------------------------ |
+| `--chart`     | Path to Helm chart                                                 |
+| `--namespace` | Target OpenShift namespace                                         |
+| `--mode`      | Comparison mode (`bootstrap` only; `helm-managed` not implemented) |
+| `--release`   | Helm release name                                                  |
+| `--values`    | Helm values file (repeatable, order matters)                       |
+| `--set`       | Helm set value (repeatable, key=value)                             |
+| `--strict`    | Treat all diffs as blocking                                        |
+| `--output`    | Write JSON report to file                                          |
 
 ---
+
 
 ## CI Integration
 
@@ -117,10 +118,10 @@ The UI is a **static viewer** for helm-guard reports.
 
 It:
 
-* Does not run Helm
-* Does not connect to OpenShift
-* Visualizes validation results only
-* Offers a name-based filter that recalculates summary counts and the resource list
+- Does not run Helm
+- Does not connect to OpenShift
+- Visualizes validation results only
+- Offers a name-based filter that recalculates summary counts and the resource list
 
 You can load a report via URL:
 
@@ -134,8 +135,8 @@ https://helm-guard-ui/?reportUrl=<artifact-url>
 
 helm-guard is packaged as two images:
 
-* **CLI image** – runs the validation logic
-* **UI image** – serves the report viewer
+- **CLI image** - runs the validation logic
+- **UI image** - serves the report viewer
 
 CI and production environments run the CLI image directly.
 Dockerfiles are provided for OpenShift deployment.
@@ -160,11 +161,11 @@ Normalization runs in three phases, in order:
 3. Platform default rules (knowledge base) in `cli/src/domain/normalization/platformDefaultRules.ts`
 
 To add a new default suppression, append a rule to `cli/src/domain/normalization/platformDefaultRules.ts`.
-All normalization lives under `cli/src/domain/normalization`; `shared` contains contracts only and the UI only renders reports.
+All normalization lives under `cli/src/domain/normalization`; `shared` contains contracts only and the UI only renders reports. Out of scope: Helm-managed comparison mode and any UI-side normalization or decision logic.
 
 ---
 
-## Reliability & Failure Behavior
+## Reliability and Failure Behavior
 
 - Any failure to run Helm or OpenShift commands is treated as a hard error.
 - `oc` failures (auth, network, API errors) stop the run with a non-zero exit code.
@@ -183,10 +184,10 @@ All normalization lives under `cli/src/domain/normalization`; `shared` contains 
 
 ```
 helm-guard/
-??? cli/        # Validation engine (CLI)
-??? shared/     # JSON report contract
-??? ui/         # Report viewer (static UI)
-??? README.md
+- cli/        # Validation engine (CLI)
+- shared/     # JSON report contract
+- ui/         # Report viewer (static UI)
+- README.md
 ```
 
 `@helm-guard/shared` is an internal package consumed via `node_modules` only.
@@ -198,11 +199,7 @@ Build `shared` before `cli` and `ui` (or let its `prepare` script build it).
 
 helm-guard is a **guardrail**, not a deployment tool.
 
-If it passes — you can deploy with confidence.
-If it fails — it tells you exactly why.
-
-```
-
-
+If it passes - you can deploy with confidence.
+If it fails - it tells you exactly why.
 
 

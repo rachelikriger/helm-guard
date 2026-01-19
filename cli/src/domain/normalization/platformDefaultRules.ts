@@ -180,7 +180,7 @@ function matchNullValue(value: unknown): boolean {
     return value === null;
 }
 
-export function matchEmptyObject(value: unknown): boolean {
+function matchEmptyObject(value: unknown): boolean {
     return isPlainObject(value) && Object.keys(value).length === 0;
 }
 
@@ -192,7 +192,7 @@ function matchExactObject<T extends Record<string, unknown>>(expected: T): Value
     return (value: unknown): boolean => deepEqual(value, expected);
 }
 
-export function matchObjectWithNullCreationTimestamp(value: unknown): boolean {
+function matchObjectWithNullCreationTimestamp(value: unknown): boolean {
     if (!isPlainObject(value)) {
         return false;
     }

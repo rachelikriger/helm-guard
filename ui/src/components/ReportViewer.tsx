@@ -120,7 +120,7 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
                         {isFiltered && (
                             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                                 <span>
-                                    Filtered view — showing {filteredResults.length} of {namespaceResults.length}{' '}
+                                    Filtered view - showing {filteredResults.length} of {namespaceResults.length}{' '}
                                     resources
                                 </span>
                                 <button
@@ -177,7 +177,7 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
             <footer className="border-t border-border py-6">
                 <div className="container">
                     <p className="text-xs text-muted-foreground text-center">
-                        helm-guard-report-viewer • Read-only validation report viewer
+                        helm-guard-report-viewer - Read-only validation report viewer
                     </p>
                 </div>
             </footer>
