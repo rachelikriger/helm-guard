@@ -1,6 +1,6 @@
 import { DiffPath, K8sKind } from '@helm-guard/shared';
 import { K8sResource } from '../types';
-import { PLATFORM_DEFAULT_RULES } from './platformDefaultRules';
+import { PLATFORM_DEFAULT_RULES } from './rules';
 import { semanticallyEqual } from './equality';
 import { normalizePath } from './path';
 
@@ -37,6 +37,9 @@ export const shouldIncludeDiff = ({ resourceKind, liveResource, path, helmValue,
 
     // Context-dependent suppression: imagePullPolicy defaults depend on the container image tag.
     if (isImagePullPolicyDefault(normalizedPath, liveValue, liveResource)) {
+        return false;
+    }
+    if (isServiceTargetPortDefault(resourceKind, normalizedPath, liveValue, liveResource)) {
         return false;
     }
 
@@ -90,36 +93,21 @@ const isImagePullPolicyDefault = (normalizedPath: DiffPath, liveValue: unknown, 
     if (!isAlwaysPolicy(liveValue)) {
         return false;
     }
-    const image = getContainerImage(liveResource, normalizedPath);
-    if (!image) {
-        return false;
-    }
-    return isLatestOrEmptyTag(image);
+    const image = getContainerImageByPath(liveResource, normalizedPath);
+    return image ? isLatestOrEmptyTag(image) : false;
 };
 
 const isAlwaysPolicy = (value: unknown): boolean => {
     return typeof value === 'string' && value.toLowerCase() === 'always';
 };
 
-const getContainerImage = (resource: K8sResource, path: DiffPath): string | undefined => {
-    const cronJobPrefix = 'spec.jobTemplate.spec.template.spec.containers.';
-    const podTemplatePrefix = 'spec.template.spec.containers.';
-    let containers: unknown;
-
-    if (path.startsWith(cronJobPrefix)) {
-        containers = (resource.spec as { jobTemplate?: { spec?: { template?: { spec?: { containers?: unknown } } } } })?.jobTemplate?.spec
-            ?.template?.spec?.containers;
-    } else if (path.startsWith(podTemplatePrefix)) {
-        containers = (resource.spec as { template?: { spec?: { containers?: unknown } } })?.template?.spec?.containers;
-    } else {
-        return undefined;
-    }
-
-    if (!Array.isArray(containers)) {
-        return undefined;
-    }
+const getContainerImageByPath = (resource: K8sResource, path: DiffPath): string | undefined => {
     const index = extractContainerIndex(path);
-    if (index === undefined || index < 0 || index >= containers.length) {
+    if (index === undefined) {
+        return undefined;
+    }
+    const containers = getContainersForPath(resource, path);
+    if (!containers || index >= containers.length) {
         return undefined;
     }
     const container = containers[index] as { image?: unknown };
@@ -128,10 +116,21 @@ const getContainerImage = (resource: K8sResource, path: DiffPath): string | unde
 
 const extractContainerIndex = (path: DiffPath): number | undefined => {
     const match = IMAGE_PULL_POLICY_PATH.exec(path);
-    if (!match) {
-        return undefined;
-    }
-    return Number(match[1]);
+    return match ? Number(match[1]) : undefined;
+};
+
+const getContainersForPath = (resource: K8sResource, path: DiffPath): unknown[] | undefined => {
+    const cronJobPrefix = 'spec.jobTemplate.spec.template.spec.containers.';
+    const podTemplatePrefix = 'spec.template.spec.containers.';
+
+    const containers = path.startsWith(cronJobPrefix)
+        ? (resource.spec as { jobTemplate?: { spec?: { template?: { spec?: { containers?: unknown } } } } })?.jobTemplate?.spec
+              ?.template?.spec?.containers
+        : path.startsWith(podTemplatePrefix)
+          ? (resource.spec as { template?: { spec?: { containers?: unknown } } })?.template?.spec?.containers
+          : undefined;
+
+    return Array.isArray(containers) ? containers : undefined;
 };
 
 const isLatestOrEmptyTag = (image: string): boolean => {
@@ -145,4 +144,50 @@ const isLatestOrEmptyTag = (image: string): boolean => {
         return tag === '' || tag === 'latest';
     }
     return true;
+};
+
+const TARGET_PORT_PATH = /\.ports\.(\d+)\.targetPort$/;
+
+const isServiceTargetPortDefault = (
+    resourceKind: K8sKind,
+    normalizedPath: DiffPath,
+    liveValue: unknown,
+    liveResource: K8sResource
+): boolean => {
+    if (resourceKind !== 'Service') {
+        return false;
+    }
+    const index = extractPortIndex(normalizedPath);
+    if (index === undefined) {
+        return false;
+    }
+    const ports = getServicePorts(liveResource);
+    if (!ports || index >= ports.length) {
+        return false;
+    }
+    const portValue = (ports[index] as { port?: unknown })?.port;
+    return matchesPortValue(liveValue, portValue);
+};
+
+const extractPortIndex = (path: DiffPath): number | undefined => {
+    const match = TARGET_PORT_PATH.exec(path);
+    return match ? Number(match[1]) : undefined;
+};
+
+const getServicePorts = (resource: K8sResource): unknown[] | undefined => {
+    const ports = (resource.spec as { ports?: unknown })?.ports;
+    return Array.isArray(ports) ? ports : undefined;
+};
+
+const matchesPortValue = (liveValue: unknown, portValue: unknown): boolean => {
+    if (typeof portValue !== 'number') {
+        return false;
+    }
+    if (typeof liveValue === 'number') {
+        return liveValue === portValue;
+    }
+    if (typeof liveValue === 'string') {
+        return liveValue === String(portValue);
+    }
+    return false;
 };

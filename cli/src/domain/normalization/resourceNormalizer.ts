@@ -53,10 +53,10 @@ const normalizeArrays = (obj: unknown): void => {
     }
 };
 
-function isSortableByName(arr: unknown[]): arr is Array<{ name: unknown }> {
+const isSortableByName = (arr: unknown[]): arr is Array<{ name: unknown }> => {
     return arr.every(isObjectWithName);
-}
+};
 
-function isObjectWithName(value: unknown): value is { name: unknown } {
+const isObjectWithName = (value: unknown): value is { name: unknown } => {
     return typeof value === 'object' && value !== null && 'name' in value;
-}
+};
