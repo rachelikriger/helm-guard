@@ -31,7 +31,7 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
     // Metadata defaults
     {
         path: 'metadata.creationTimestamp',
-        matches: matchNullValue,
+        matches: matchNullOrTimestamp,
     },
     {
         path: 'metadata.annotations',
@@ -80,14 +80,14 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         resourceKinds: BUILD_CONFIG_KINDS,
         matches: matchEmptyObject,
     },
-    // CronJob history defaults
+    // CronJob defaults: history
     {
         path: 'spec.failedJobsHistoryLimit',
         resourceKinds: CRONJOB_KINDS,
         matches: matchExactValue(1),
     },
     {
-        path: 'spec.successfulJobHistoryLimit',
+        path: 'spec.successfulJobsHistoryLimit',
         resourceKinds: CRONJOB_KINDS,
         matches: matchExactValue(3),
     },
@@ -96,7 +96,7 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         resourceKinds: CRONJOB_KINDS,
         matches: matchExactValue('Allow'),
     },
-    // CronJob jobTemplate defaults
+    // CronJob defaults: jobTemplate metadata
     {
         path: 'spec.jobTemplate.metadata',
         resourceKinds: CRONJOB_KINDS,
@@ -107,6 +107,7 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         resourceKinds: CRONJOB_KINDS,
         matches: matchNullValue,
     },
+    // CronJob defaults: jobTemplate pod template
     {
         path: 'spec.jobTemplate.spec.template.metadata',
         resourceKinds: CRONJOB_KINDS,
@@ -190,10 +191,6 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         matches: matchExactValue('File'),
     },
     {
-        path: 'spec.template.spec.containers.*.imagePullPolicy',
-        matches: matchExactValue('Always'),
-    },
-    {
         path: 'spec.template.metadata.annotations',
         resourceKinds: CONTROLLER_POD_TEMPLATE_KINDS,
         matches: matchObjectWithRestartedAt,
@@ -216,6 +213,10 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 function matchNullValue(value: unknown): boolean {
     return value === null;
+}
+
+function matchNullOrTimestamp(value: unknown): boolean {
+    return value === null || (typeof value === 'string' && value.length > 0);
 }
 
 function matchEmptyObject(value: unknown): boolean {

@@ -41,7 +41,7 @@ export const compareResources = (
             .map(d => {
                 const path = fromSegmentsToPath(d.path, d.kind === 'A' ? d.index : undefined);
                 const { helmValue, liveValue } = extractDiffValues(d);
-                if (!shouldIncludeDiff({ resourceKind: helmRes.kind, path, helmValue, liveValue })) {
+                if (!shouldIncludeDiff({ resourceKind: helmRes.kind, liveResource: liveRes, path, helmValue, liveValue })) {
                     return {
                         path,
                         helmValue,
