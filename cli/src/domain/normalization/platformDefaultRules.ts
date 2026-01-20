@@ -27,6 +27,12 @@ const BUILD_CONFIG_KINDS: PlatformDefaultRule['resourceKinds'] = ['BuildConfig']
 
 const DEPLOYMENT_KINDS: PlatformDefaultRule['resourceKinds'] = ['Deployment'];
 
+const ROUTE_KINDS: PlatformDefaultRule['resourceKinds'] = ['Route'];
+
+const SERVICE_KINDS: PlatformDefaultRule['resourceKinds'] = ['Service'];
+
+const STATEFULSET_KINDS: PlatformDefaultRule['resourceKinds'] = ['StatefulSet'];
+
 export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
     // Metadata defaults
     {
@@ -48,6 +54,10 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
     {
         path: 'metadata.annotations.app.openshift.io/branch',
         matches: matchExactValue(''),
+    },
+    {
+        path: 'metadata.annotations.app.openshift.io/commit',
+        matches: matchNonEmptyString,
     },
     // Generic spec defaults
     {
@@ -148,6 +158,26 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         resourceKinds: CRONJOB_KINDS,
         matches: matchEmptyObject,
     },
+    {
+        path: 'spec.jobTemplate.spec.template.spec.containers.*.livenessProbe.successThreshold',
+        resourceKinds: CRONJOB_KINDS,
+        matches: matchExactValue(1),
+    },
+    {
+        path: 'spec.jobTemplate.spec.template.spec.containers.*.readinessProbe.successThreshold',
+        resourceKinds: CRONJOB_KINDS,
+        matches: matchExactValue(1),
+    },
+    {
+        path: 'spec.jobTemplate.spec.template.spec.containers.*.livenessProbe.httpGet.scheme',
+        resourceKinds: CRONJOB_KINDS,
+        matches: matchExactValue('HTTP'),
+    },
+    {
+        path: 'spec.jobTemplate.spec.template.spec.containers.*.readinessProbe.httpGet.scheme',
+        resourceKinds: CRONJOB_KINDS,
+        matches: matchExactValue('HTTP'),
+    },
     // Pod template defaults
     {
         path: 'spec.template.metadata',
@@ -191,6 +221,30 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         matches: matchExactValue('File'),
     },
     {
+        path: 'spec.template.spec.containers.*.livenessProbe.successThreshold',
+        matches: matchExactValue(1),
+    },
+    {
+        path: 'spec.template.spec.containers.*.readinessProbe.successThreshold',
+        matches: matchExactValue(1),
+    },
+    {
+        path: 'spec.template.spec.containers.*.livenessProbe.httpGet.scheme',
+        matches: matchExactValue('HTTP'),
+    },
+    {
+        path: 'spec.template.spec.containers.*.readinessProbe.httpGet.scheme',
+        matches: matchExactValue('HTTP'),
+    },
+    {
+        path: 'spec.template.spec.volumes.*.secret.defaultMode',
+        matches: matchExactValue(420),
+    },
+    {
+        path: 'spec.template.spec.volumes.*.configMap.defaultMode',
+        matches: matchExactValue(420),
+    },
+    {
         path: 'spec.template.metadata.annotations',
         resourceKinds: CONTROLLER_POD_TEMPLATE_KINDS,
         matches: matchObjectWithRestartedAt,
@@ -204,6 +258,74 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         path: 'spec.revisionHistoryLimit',
         resourceKinds: DEPLOYMENT_KINDS,
         matches: matchExactValue(10),
+    },
+    // StatefulSet defaults
+    {
+        path: 'spec.persistentVolumeClaimRetentionPolicy',
+        resourceKinds: STATEFULSET_KINDS,
+        matches: matchExactObject({ whenDeleted: 'Retain', whenScaled: 'Retain' }),
+    },
+    // Service defaults
+    {
+        path: 'spec.clusterIP',
+        resourceKinds: SERVICE_KINDS,
+        matches: matchNonEmptyString,
+    },
+    {
+        path: 'spec.clusterIPs',
+        resourceKinds: SERVICE_KINDS,
+        matches: matchArrayOfStrings,
+    },
+    {
+        path: 'spec.internalTrafficPolicy',
+        resourceKinds: SERVICE_KINDS,
+        matches: matchOneOfValues('Cluster', 'Local'),
+    },
+    {
+        path: 'spec.ipFamilyPolicy',
+        resourceKinds: SERVICE_KINDS,
+        matches: matchOneOfValues('SingleStack', 'PreferDualStack', 'RequireDualStack'),
+    },
+    {
+        path: 'spec.sessionAffinity',
+        resourceKinds: SERVICE_KINDS,
+        matches: matchExactValue('None'),
+    },
+    {
+        path: 'spec.type',
+        resourceKinds: SERVICE_KINDS,
+        matches: matchExactValue('ClusterIP'),
+    },
+    {
+        path: 'spec.ipFamilies',
+        resourceKinds: SERVICE_KINDS,
+        matches: matchArrayOfStrings,
+    },
+    {
+        path: 'spec.ports.*.protocol',
+        resourceKinds: SERVICE_KINDS,
+        matches: matchExactValue('TCP'),
+    },
+    {
+        path: 'spec.ports.*.nodePort',
+        resourceKinds: SERVICE_KINDS,
+        matches: matchNumber,
+    },
+    // Route defaults (OpenShift)
+    {
+        path: 'spec.host',
+        resourceKinds: ROUTE_KINDS,
+        matches: matchNonEmptyString,
+    },
+    {
+        path: 'spec.to.weight',
+        resourceKinds: ROUTE_KINDS,
+        matches: matchExactValue(100),
+    },
+    {
+        path: 'spec.wildcardPolicy',
+        resourceKinds: ROUTE_KINDS,
+        matches: matchExactValue('None'),
     },
 ];
 
@@ -233,6 +355,18 @@ function matchOneOfValues<T extends string | number | boolean>(...expected: T[])
 
 function matchExactObject<T extends Record<string, unknown>>(expected: T): ValueMatcher {
     return (value: unknown): boolean => deepEqual(value, expected);
+}
+
+function matchNonEmptyString(value: unknown): boolean {
+    return typeof value === 'string' && value.length > 0;
+}
+
+function matchArrayOfStrings(value: unknown): boolean {
+    return Array.isArray(value) && value.every(item => typeof item === 'string');
+}
+
+function matchNumber(value: unknown): boolean {
+    return typeof value === 'number' && Number.isFinite(value);
 }
 
 function matchObjectWithNullCreationTimestamp(value: unknown): boolean {
