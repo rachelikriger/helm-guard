@@ -41,6 +41,14 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         path: 'metadata.labels',
         matches: matchExactObject({ 'app.kubernetes.io/managed-by': 'Helm' }),
     },
+    {
+        path: 'metadata.labels.app.kubernetes.io/managed-by',
+        matches: matchOneOfValues('Helm', 'helm'),
+    },
+    {
+        path: 'metadata.annotations.app.openshift.io/branch',
+        matches: matchExactValue(''),
+    },
     // Generic spec defaults
     {
         path: 'spec.nodeSelector',
@@ -83,6 +91,11 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         resourceKinds: CRONJOB_KINDS,
         matches: matchExactValue(3),
     },
+    {
+        path: 'spec.concurrencyPolicy',
+        resourceKinds: CRONJOB_KINDS,
+        matches: matchExactValue('Allow'),
+    },
     // CronJob jobTemplate defaults
     {
         path: 'spec.jobTemplate.metadata',
@@ -93,6 +106,11 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         path: 'spec.jobTemplate.metadata.creationTimestamp',
         resourceKinds: CRONJOB_KINDS,
         matches: matchNullValue,
+    },
+    {
+        path: 'spec.jobTemplate.spec.template.metadata',
+        resourceKinds: CRONJOB_KINDS,
+        matches: matchObjectWithNullCreationTimestamp,
     },
     {
         path: 'spec.jobTemplate.spec.template.spec.dnsPolicy',
@@ -123,6 +141,11 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         path: 'spec.jobTemplate.spec.template.spec.containers.*.terminationMessagePolicy',
         resourceKinds: CRONJOB_KINDS,
         matches: matchExactValue('File'),
+    },
+    {
+        path: 'spec.jobTemplate.spec.template.spec.containers.*.resources',
+        resourceKinds: CRONJOB_KINDS,
+        matches: matchEmptyObject,
     },
     // Pod template defaults
     {
@@ -170,6 +193,21 @@ export const PLATFORM_DEFAULT_RULES: PlatformDefaultRule[] = [
         path: 'spec.template.spec.containers.*.imagePullPolicy',
         matches: matchExactValue('Always'),
     },
+    {
+        path: 'spec.template.metadata.annotations',
+        resourceKinds: CONTROLLER_POD_TEMPLATE_KINDS,
+        matches: matchObjectWithRestartedAt,
+    },
+    {
+        path: 'spec.progressDeadlineSeconds',
+        resourceKinds: DEPLOYMENT_KINDS,
+        matches: matchExactValue(600),
+    },
+    {
+        path: 'spec.revisionHistoryLimit',
+        resourceKinds: DEPLOYMENT_KINDS,
+        matches: matchExactValue(10),
+    },
 ];
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -188,6 +226,10 @@ function matchExactValue<T extends string | number | boolean>(expected: T): Valu
     return (value: unknown): boolean => value === expected;
 }
 
+function matchOneOfValues<T extends string | number | boolean>(...expected: T[]): ValueMatcher {
+    return (value: unknown): boolean => expected.includes(value as T);
+}
+
 function matchExactObject<T extends Record<string, unknown>>(expected: T): ValueMatcher {
     return (value: unknown): boolean => deepEqual(value, expected);
 }
@@ -198,6 +240,14 @@ function matchObjectWithNullCreationTimestamp(value: unknown): boolean {
     }
     const keys = Object.keys(value);
     return keys.length === 1 && value.creationTimestamp === null;
+}
+
+function matchObjectWithRestartedAt(value: unknown): boolean {
+    if (!isPlainObject(value)) {
+        return false;
+    }
+    const keys = Object.keys(value);
+    return keys.length === 1 && typeof value['kubectl.kubernetes.io/restartedAt'] === 'string';
 }
 
 function matchDefaultRollingUpdateStrategy(value: unknown): boolean {
