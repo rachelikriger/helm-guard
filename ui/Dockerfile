@@ -4,19 +4,19 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # ---------- build shared FIRST ----------
-COPY shared/package.json shared/package-lock.json ./shared/
+COPY shared/package.json shared/package-lock.json shared/tsconfig.json ./shared/
 RUN npm --prefix ./shared ci
 
-COPY shared/tsconfig.json shared/src ./shared/
+COPY shared/src ./shared/src
 RUN npm --prefix ./shared run build
 
 # ---------- then build ui ----------
-COPY ui/package.json ui/package-lock.json ./ui/
-RUN npm --prefix ./ui ci
+COPY ui/package.json ui/package-lock.json ui/tsconfig.json ./ui/
+RUN npm config set registry https://registry.npmjs.org/ \
+  && npm --prefix ./ui ci
 
 COPY ui ./ui
 RUN npm --prefix ./ui run build
-
 
 # ---------- runtime ----------
 FROM nginx:1.25-alpine AS runtime
