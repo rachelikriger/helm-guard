@@ -38,10 +38,31 @@ const Index = () => {
 
         let isMounted = true;
 
+        const resolveReportUrl = (url: string) => {
+            if (!import.meta.env.PROD) {
+                return url;
+            }
+
+            let parsedUrl: URL;
+            try {
+                parsedUrl = new URL(url, window.location.href);
+            } catch {
+                return url;
+            }
+
+            const isAbsolute = /^[a-z][a-z0-9+.-]*:/.test(url);
+            const isSameOrigin = parsedUrl.origin === window.location.origin;
+            if (!isAbsolute || isSameOrigin) {
+                return parsedUrl.toString();
+            }
+
+            return `/proxy?url=${encodeURIComponent(parsedUrl.toString())}`;
+        };
+
         const loadReport = async () => {
             try {
                 setLoadError(null);
-                const response = await fetch(reportUrl);
+                const response = await fetch(resolveReportUrl(reportUrl));
                 if (!response.ok) {
                     throw new Error(`Failed to fetch report (${response.status})`);
                 }

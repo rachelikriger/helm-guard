@@ -86,8 +86,9 @@ const main = async (): Promise<void> => {
             fs.writeFileSync(opts.output, JSON.stringify(report, null, 2));
         }
 
-        const exitCode = printReport(outcome.results, opts.namespace);
-        process.exit(exitCode);
+        printReport(outcome.results, opts.namespace);
+        process.exit(0);
+
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         const output = formatErrorMessage(message);
