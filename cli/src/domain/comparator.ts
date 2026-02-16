@@ -105,10 +105,8 @@ const extractArraySide = (entry: Diff<K8sResource, K8sResource>, side: 'lhs' | '
     return undefined;
 };
 
-const classifyDiff = (path: string, strict: boolean): DiffActionInternal => {
-    if (!strict) return DIFF_ACTION.WARN;
-    return DIFF_ACTION.FAIL;
-};
+const classifyDiff = (_path: string, strict: boolean): DiffActionInternal =>
+    strict ? DIFF_ACTION.FAIL : DIFF_ACTION.WARN;
 
 type ReportableAction = Exclude<DiffActionInternal, typeof DIFF_ACTION.IGNORE>;
 

@@ -2,17 +2,21 @@ export type Mode = 'bootstrap' | 'helm-managed';
 
 export type K8sKind = string;
 
-export enum DiffAction {
-    WARN = 'WARN',
-    FAIL = 'FAIL',
-}
+export const DiffAction = {
+    WARN: 'WARN',
+    FAIL: 'FAIL',
+} as const;
 
-export enum ResourceStatus {
-    MATCH = 'MATCH',
-    DRIFT = 'DRIFT',
-    MISSING_LIVE = 'MISSING_LIVE',
-    MISSING_HELM = 'MISSING_HELM',
-}
+export type DiffAction = (typeof DiffAction)[keyof typeof DiffAction];
+
+export const ResourceStatus = {
+    MATCH: 'MATCH',
+    DRIFT: 'DRIFT',
+    MISSING_LIVE: 'MISSING_LIVE',
+    MISSING_HELM: 'MISSING_HELM',
+} as const;
+
+export type ResourceStatus = (typeof ResourceStatus)[keyof typeof ResourceStatus];
 
 export type DiffPath = string;
 

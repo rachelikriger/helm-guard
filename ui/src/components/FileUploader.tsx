@@ -1,18 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
 import { Upload, FileJson, AlertCircle } from 'lucide-react';
+import { safeParseReport } from '@helm-guard/shared';
 import type { HelmGuardReport } from '@/types/report';
+import type { SafeParseReportFailure } from '@helm-guard/shared';
 
 interface FileUploaderProps {
     onReportLoaded: (report: HelmGuardReport) => void;
-}
-
-function isValidReport(report: unknown): report is HelmGuardReport {
-    return Boolean(
-        report &&
-        typeof report === 'object' &&
-        (report as HelmGuardReport).summary &&
-        Array.isArray((report as HelmGuardReport).results),
-    );
 }
 
 export function FileUploader({ onReportLoaded }: FileUploaderProps) {
@@ -33,15 +26,13 @@ export function FileUploader({ onReportLoaded }: FileUploaderProps) {
             reader.onload = e => {
                 try {
                     const content = e.target?.result as string;
-                    const report = JSON.parse(content) as HelmGuardReport;
-
-                    // Validate basic structure
-                    if (!isValidReport(report)) {
-                        setError('Invalid report format: missing summary or results array');
-                        return;
+                    const raw = JSON.parse(content);
+                    const parsed = safeParseReport(raw);
+                    if (parsed.success) {
+                        onReportLoaded(parsed.data);
+                    } else {
+                        setError((parsed as SafeParseReportFailure).error.message ?? 'Invalid report format');
                     }
-
-                    onReportLoaded(report);
                 } catch {
                     setError('Failed to parse JSON file');
                 }

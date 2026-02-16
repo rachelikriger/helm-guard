@@ -30,7 +30,7 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
         setSelectedActions([]);
     };
 
-    const namespaceSummary = useMemo(() => {
+    const filteredSummary = useMemo(() => {
         const countByStatus = (status: ResourceStatus): number =>
             filteredResults.filter(result => result.status === status).length;
         const countByAction = (action: DiffAction): number =>
@@ -138,7 +138,7 @@ export function ReportViewer({ report, onNewReport }: ReportViewerProps) {
                 <section>
                     <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Summary</h2>
                     <ReportSummary
-                        summary={namespaceSummary}
+                        summary={filteredSummary}
                         helmChart={report.config?.helmChart}
                         namespace={report.config?.namespace}
                         timestamp={report.timestamp}

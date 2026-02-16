@@ -32,7 +32,7 @@ export function DiffTable({ diffs }: DiffTableProps) {
                 </thead>
                 <tbody className="divide-y divide-border/50">
                     {diffs.map((diff, index) => (
-                        <tr key={index} className="hover:bg-muted/30 transition-colors">
+                        <tr key={`${diff.path}-${index}`} className="hover:bg-muted/30 transition-colors">
                             <td className="py-3 px-3 align-top">
                                 <code className="text-xs font-mono text-primary break-all">{diff.path}</code>
                             </td>

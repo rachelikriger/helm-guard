@@ -91,6 +91,10 @@ export const parseYamlDocuments = (yaml: string, context: string): unknown[] => 
 };
 
 export const formatError = (err: unknown): string => {
+    if (err instanceof CommandError) {
+        const stderr = err.result.stderr?.trim();
+        return stderr ? `${err.message}: ${stderr}` : err.message;
+    }
     if (err instanceof Error) {
         const stderr = getErrorOutput(err);
         return stderr ? `${err.message}: ${stderr}` : err.message;
@@ -100,14 +104,8 @@ export const formatError = (err: unknown): string => {
 
 const getErrorOutput = (err: Error): string | undefined => {
     const errorWithOutput = err as Error & { stderr?: unknown };
-    if (!errorWithOutput.stderr) {
-        return undefined;
-    }
-    if (typeof errorWithOutput.stderr === 'string') {
-        return errorWithOutput.stderr.trim();
-    }
-    if (errorWithOutput.stderr instanceof Buffer) {
-        return errorWithOutput.stderr.toString('utf-8').trim();
-    }
+    if (!errorWithOutput.stderr) return undefined;
+    if (typeof errorWithOutput.stderr === 'string') return errorWithOutput.stderr.trim();
+    if (errorWithOutput.stderr instanceof Buffer) return errorWithOutput.stderr.toString('utf-8').trim();
     return String(errorWithOutput.stderr).trim();
 };

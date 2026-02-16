@@ -3,16 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { FileUploader } from '@/components/FileUploader';
 import { ReportViewer } from '@/components/ReportViewer';
+import { safeParseReport } from '@helm-guard/shared';
 import type { HelmGuardReport } from '@/types/report';
-
-function isValidReport(report: unknown): report is HelmGuardReport {
-    return Boolean(
-        report &&
-        typeof report === 'object' &&
-        (report as HelmGuardReport).summary &&
-        Array.isArray((report as HelmGuardReport).results),
-    );
-}
+import type { SafeParseReportFailure } from '@helm-guard/shared';
 
 const Index = () => {
     const [searchParams] = useSearchParams();
@@ -38,42 +31,20 @@ const Index = () => {
 
         let isMounted = true;
 
-        const resolveReportUrl = (url: string) => {
-            if (!import.meta.env.PROD) {
-                return url;
-            }
-
-            let parsedUrl: URL;
-            try {
-                parsedUrl = new URL(url, window.location.href);
-            } catch {
-                return url;
-            }
-
-            const isAbsolute = /^[a-z][a-z0-9+.-]*:/.test(url);
-            const isSameOrigin = parsedUrl.origin === window.location.origin;
-            if (!isAbsolute || isSameOrigin) {
-                return parsedUrl.toString();
-            }
-
-            return `/proxy?url=${encodeURIComponent(parsedUrl.toString())}`;
-        };
-
         const loadReport = async () => {
             try {
                 setLoadError(null);
-                const response = await fetch(resolveReportUrl(reportUrl));
+                const response = await fetch(reportUrl);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch report (${response.status})`);
                 }
 
-                const data = (await response.json()) as HelmGuardReport;
-                if (!isValidReport(data)) {
-                    throw new Error('Invalid report format: missing summary or results array');
-                }
-
-                if (isMounted) {
-                    setReport(data);
+                const data = await response.json();
+                const parsed = safeParseReport(data);
+                if (parsed.success) {
+                    if (isMounted) setReport(parsed.data);
+                } else {
+                    throw new Error((parsed as SafeParseReportFailure).error.message ?? 'Invalid report format');
                 }
             } catch (error) {
                 if (isMounted) {

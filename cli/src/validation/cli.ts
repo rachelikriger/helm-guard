@@ -27,10 +27,11 @@ export const validateHelmRenderOptions = (
     const options: HelmRenderOptions = {};
 
     if (releaseName !== undefined) {
-        if (!releaseName.trim()) {
+        const name = typeof releaseName === 'string' ? releaseName : String(releaseName ?? '');
+        if (!name.trim()) {
             throw new Error('Invalid CLI input: Release name must be a non-empty string');
         }
-        options.releaseName = releaseName;
+        options.releaseName = name;
     }
 
     if (valuesFiles && valuesFiles.length > 0) {

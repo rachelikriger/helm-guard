@@ -1,8 +1,5 @@
-import { deepEqual } from '../equality';
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> => {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-};
+import equal from 'fast-deep-equal';
+import { isPlainObject } from '../equality';
 
 export const matchNullValue = (value: unknown): boolean => {
     return value === null;
@@ -29,7 +26,7 @@ export const matchOneOfValues = <T extends string | number | boolean>(...expecte
 };
 
 export const matchExactObject = <T extends Record<string, unknown>>(expected: T) => {
-    return (value: unknown): boolean => deepEqual(value, expected);
+    return (value: unknown): boolean => equal(value, expected);
 };
 
 export const matchNonEmptyString = (value: unknown): boolean => {

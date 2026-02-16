@@ -3,6 +3,7 @@ import { K8sResource } from '../types';
 import { PLATFORM_DEFAULT_RULES } from './rules';
 import { semanticallyEqual } from './equality';
 import { normalizePath } from './path';
+import { matchEmptyObject, matchObjectWithNullCreationTimestamp } from './rules/ruleMatchers';
 
 export type DiffContext = Readonly<{
     resourceKind: K8sKind;
@@ -69,22 +70,6 @@ const toWildcardRegex = (pattern: DiffPath): RegExp => {
     const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const withWildcards = escaped.replace(/\\\*/g, '[0-9]+');
     return new RegExp(`^${withWildcards}$`);
-};
-
-const matchEmptyObject = (value: unknown): boolean => {
-    return isPlainObject(value) && Object.keys(value).length === 0;
-};
-
-const matchObjectWithNullCreationTimestamp = (value: unknown): boolean => {
-    if (!isPlainObject(value)) {
-        return false;
-    }
-    const keys = Object.keys(value);
-    return keys.length === 1 && value.creationTimestamp === null;
-};
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> => {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
 };
 
 const IMAGE_PULL_POLICY_PATH = /\.containers\.(\d+)\.imagePullPolicy$/;
