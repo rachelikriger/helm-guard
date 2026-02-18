@@ -19,12 +19,18 @@ const proxyMiddleware: Connect.NextHandleFunction = (req, res, next) => {
 
     fetch(targetUrl, { headers })
         .then(async (r) => {
+            if (!r.ok) {
+                const text = await r.text();
+                console.error(`[proxy] GitLab returned ${r.status}: ${text.slice(0, 200)}`);
+            }
             res.writeHead(r.status, Object.fromEntries(r.headers.entries()));
             const buf = await r.arrayBuffer();
             res.end(Buffer.from(buf));
         })
-        .catch(() => {
-            res.writeHead(502).end();
+        .catch((err) => {
+            console.error('[proxy] Fetch failed:', err.message);
+            res.writeHead(502, { 'Content-Type': 'text/plain' });
+            res.end(`Proxy error: ${err.message}`);
         });
 };
 
