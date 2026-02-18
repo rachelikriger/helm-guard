@@ -21,13 +21,18 @@ RUN npm --prefix ./ui run build
 # ---------- runtime ----------
 FROM nginx:1.25-alpine AS runtime
 
-COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
+RUN apk add --no-cache gettext
+
+COPY ui/nginx.conf.template /etc/nginx/conf.d/default.conf.template
+COPY ui/entrypoint.sh /entrypoint.sh
 COPY --from=build /app/ui/dist/ /usr/share/nginx/html/
 
+RUN chmod +x /entrypoint.sh
+
 # OpenShift runs with a random UID; keep runtime dirs group-writable for GID 0.
-RUN chgrp -R 0 /usr/share/nginx/html /var/cache/nginx /var/run \
+RUN chgrp -R 0 /usr/share/nginx/html /var/cache/nginx /var/run /entrypoint.sh \
   && chmod -R g=u /usr/share/nginx/html /var/cache/nginx /var/run
 
 EXPOSE 8080
 USER 1001:0
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]

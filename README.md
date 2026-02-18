@@ -129,6 +129,11 @@ You can load a report via URL:
 https://helm-guard-ui/?reportUrl=<artifact-url>
 ```
 
+For **GitLab CI artifacts** (private projects), configure authentication to avoid CORS:
+
+- **Preferred (nginx-level):** Set `GITLAB_PROXY_TOKEN` env var when deploying the UI (e.g. in OpenShift Deployment). Use a Project/Group Access Token with `read_api` scope. The token is never sent in URLs.
+- **Alternative (pipeline-level):** Add `REPORT_ACCESS_TOKEN` as a masked CI/CD variable. The pipeline will include the token in the link.
+
 ---
 
 ## Container Usage
@@ -140,6 +145,21 @@ helm-guard is packaged as two images:
 
 CI and production environments run the CLI image directly.
 Dockerfiles are provided for OpenShift deployment.
+
+### UI deployment (GitLab proxy token)
+
+When deploying the UI for GitLab artifact viewing, set the env var:
+
+```yaml
+env:
+  - name: GITLAB_PROXY_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: helm-guard-gitlab-token
+        key: token
+```
+
+Use a Project or Group Access Token with `read_api` scope. The token is injected at container startup and never appears in URLs.
 
 ---
 

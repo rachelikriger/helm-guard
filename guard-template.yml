@@ -1,4 +1,4 @@
-﻿stages:
+stages:
     - validate
 
 variables:
@@ -55,7 +55,9 @@ helm_guard_validate:
 
     after_script:
         - |
-            REPORT_URL="${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/report.json"
+            REPORT_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/report.json"
+            REPORT_URL_ENC=$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$REPORT_URL")
+            REPORT_LINK="${HELM_GUARD_UI_URL}/?reportUrl=${REPORT_URL_ENC}"
 
             echo ""
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -63,7 +65,7 @@ helm_guard_validate:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
             echo "🔗 View validation report:"
-            echo "👉 ${HELM_GUARD_UI_URL}/?reportUrl=${REPORT_URL}"
+            echo "👉 $REPORT_LINK"
             echo ""
             echo "ℹ️  Interpretation guide:"
             echo "   ✅ No findings        → Safe to deploy"
