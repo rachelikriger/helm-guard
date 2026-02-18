@@ -34,12 +34,7 @@ const Index = () => {
         const loadReport = async () => {
             try {
                 setLoadError(null);
-                const reportToken = searchParams.get('reportToken');
-                const fetchUrl =
-                    reportToken !== null
-                        ? `/proxy?url=${encodeURIComponent(reportUrl)}&token=${encodeURIComponent(reportToken)}`
-                        : `/proxy?url=${encodeURIComponent(reportUrl)}`;
-                const response = await fetch(fetchUrl);
+                const response = await fetch(`/proxy?url=${encodeURIComponent(reportUrl)}`);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch report (${response.status})`);
                 }
