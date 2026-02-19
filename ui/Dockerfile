@@ -21,8 +21,6 @@ RUN npm --prefix ./ui run build
 # ---------- runtime ----------
 FROM nginx:1.25-alpine AS runtime
 
-RUN apk add --no-cache gettext
-
 COPY ui/nginx.conf.template /etc/nginx/conf.d/default.conf.template
 COPY ui/entrypoint.sh /entrypoint.sh
 COPY --from=build /app/ui/dist/ /usr/share/nginx/html/
