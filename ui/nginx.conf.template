@@ -1,5 +1,5 @@
-# GITLAB_PROXY_TOKEN: optional env var for GitLab artifact auth (Project/Group token, read_api).
-# Substituted at container startup. Falls back to ?token= URL param when empty.
+# GITLAB_PROXY_TOKEN: env var for GitLab artifact auth (Project/Group token, read_api).
+# Substituted at container startup. Set via OpenShift Secret.
 server {
   listen 8080;
   server_name _;
@@ -20,15 +20,9 @@ server {
     if ($arg_url = "") { return 400; }
     if ($arg_url !~* ^https?://) { return 400; }
 
-    # Token: $arg_token from URL, or GITLAB_PROXY_TOKEN from env (substituted at startup)
-    set $proxy_token $arg_token;
-    if ($proxy_token = "") {
-      set $proxy_token "${GITLAB_PROXY_TOKEN}";
-    }
-
     proxy_ssl_server_name on;
     proxy_set_header Host $proxy_host;
-    proxy_set_header PRIVATE-TOKEN $proxy_token;
+    proxy_set_header PRIVATE-TOKEN "${GITLAB_PROXY_TOKEN}";
     proxy_pass $arg_url;
   }
 }
