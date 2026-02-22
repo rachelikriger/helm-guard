@@ -42,6 +42,7 @@ const Index = () => {
                         const main = errBody.detail ?? errBody.error;
                         if (main) msg = main;
                         if (errBody.hint) msg += ` — ${errBody.hint}`;
+                        if (response.status === 502) console.warn('[proxy 502]', errBody);
                     } catch {
                         /* ignore */
                     }
