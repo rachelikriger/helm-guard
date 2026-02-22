@@ -79,7 +79,7 @@ env:
         key: token
 ```
 
-For local dev: `.env.local` with `GITLAB_PROXY_TOKEN` (see `ui/.env.local.example`).
+For local dev: `.env.local` with `GITLAB_PROXY_TOKEN` (see `ui/.env.local.example`). Self-hosted GitLab with self-signed cert: set `NODE_TLS_REJECT_UNAUTHORIZED=0` (dev/test only).
 
 ---
 

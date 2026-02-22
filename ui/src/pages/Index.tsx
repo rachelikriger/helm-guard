@@ -39,7 +39,8 @@ const Index = () => {
                     let msg = `Failed to fetch report (${response.status})`;
                     try {
                         const errBody = await response.json();
-                        if (errBody.error) msg = errBody.error;
+                        const main = errBody.detail ?? errBody.error;
+                        if (main) msg = main;
                         if (errBody.hint) msg += ` — ${errBody.hint}`;
                     } catch {
                         /* ignore */

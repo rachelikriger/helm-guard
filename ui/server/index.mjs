@@ -38,12 +38,22 @@ async function proxyToGitLab(res, targetUrl) {
         res.writeHead(r.status, Object.fromEntries(r.headers.entries()));
         res.end(buf);
     } catch (err) {
-        console.error('[proxy]', err.message);
+        const msg = err?.message ?? 'Unknown error';
+        const code = err?.code ?? '';
+        console.error('[proxy]', code, msg, targetUrl);
+
+        let hint = 'Ensure GitLab is reachable and GITLAB_PROXY_TOKEN is set for private projects.';
+        if (/certificate|self.?signed|UNABLE_TO_VERIFY/i.test(msg)) {
+            hint = 'Self-signed certificate? Set NODE_TLS_REJECT_UNAUTHORIZED=0 for self-hosted GitLab (dev/test only).';
+        } else if (code === 'ECONNREFUSED' || code === 'ENOTFOUND' || code === 'ETIMEDOUT') {
+            hint = 'GitLab unreachable from this host. Check network, DNS, and firewall.';
+        }
+
         res.writeHead(502, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
             error: 'Proxy error',
-            detail: err.message,
-            hint: 'Ensure GitLab is reachable and GITLAB_PROXY_TOKEN is set for private projects.',
+            detail: code ? `${code}: ${msg}` : msg,
+            hint,
         }));
     }
 }
