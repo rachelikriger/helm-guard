@@ -33,8 +33,8 @@ export function FileUploader({ onReportLoaded }: FileUploaderProps) {
                     } else {
                         setError((parsed as SafeParseReportFailure).error.message ?? 'Invalid report format');
                     }
-                } catch {
-                    setError('Failed to parse JSON file');
+                } catch (e) {
+                    setError(e instanceof Error ? e.message : 'Failed to parse JSON file');
                 }
             };
             reader.onerror = () => setError('Failed to read file');

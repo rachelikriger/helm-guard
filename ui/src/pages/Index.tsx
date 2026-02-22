@@ -3,9 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { FileUploader } from '@/components/FileUploader';
 import { ReportViewer } from '@/components/ReportViewer';
-import { safeParseReport } from '@helm-guard/shared';
+import { fetchReportFromUrl } from '@/lib/reportApi';
 import type { HelmGuardReport } from '@/types/report';
-import type { SafeParseReportFailure } from '@helm-guard/shared';
 
 const Index = () => {
     const [searchParams] = useSearchParams();
@@ -30,35 +29,13 @@ const Index = () => {
         }
 
         let isMounted = true;
+        setLoadError(null);
 
-        const loadReport = async () => {
-            try {
-                setLoadError(null);
-                const response = await fetch(`/proxy?url=${encodeURIComponent(reportUrl)}`);
-                if (!response.ok) {
-                    let msg = `Failed to fetch report (${response.status})`;
-                    try {
-                        const errBody = await response.json();
-                        const main = errBody.detail ?? errBody.error;
-                        if (main) msg = main;
-                        if (errBody.hint) msg += ` — ${errBody.hint}`;
-                        if (response.status === 502) console.warn('[proxy 502]', errBody);
-                    } catch {
-                        /* ignore */
-                    }
-                    throw new Error(msg);
-                }
-
-                const data = await response.json();
-                const parsed = safeParseReport(data);
-                if (parsed.success) {
-                    if (isMounted) setReport(parsed.data);
-                } else {
-                    const err = (parsed as SafeParseReportFailure).error;
-                    const msg = err?.message ?? 'Invalid report format';
-                    throw new Error(typeof msg === 'string' ? msg : 'Invalid report format');
-                }
-            } catch (error) {
+        fetchReportFromUrl(reportUrl)
+            .then((data) => {
+                if (isMounted) setReport(data);
+            })
+            .catch((error) => {
                 if (isMounted) {
                     setLoadError(
                         error instanceof Error
@@ -67,10 +44,7 @@ const Index = () => {
                     );
                     setReport(null);
                 }
-            }
-        };
-
-        loadReport();
+            });
 
         return () => {
             isMounted = false;

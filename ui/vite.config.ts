@@ -35,12 +35,13 @@ const gitlabProxy: Connect.NextHandleFunction = (req, res, next) => {
                 res.end(Buffer.from(await r.arrayBuffer()));
             }
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
             if (!res.writableEnded) {
-                console.error('[proxy]', err.message);
+                const msg = err instanceof Error ? err.message : String(err);
+                console.error('[proxy]', msg);
                 sendJson(res, 502, {
                     error: 'Proxy error',
-                    detail: err.message,
+                    detail: msg,
                     hint: 'Ensure GitLab is reachable and GITLAB_PROXY_TOKEN is set for private projects.',
                 });
             }

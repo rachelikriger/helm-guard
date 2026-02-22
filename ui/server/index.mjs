@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
  * Production server: static files + GitLab artifact proxy.
+ * @typedef {import('http').IncomingMessage} IncomingMessage
+ * @typedef {import('http').ServerResponse} ServerResponse
  */
+
 import { createServer } from 'http';
 import { readFile } from 'fs/promises';
 import { join, extname, normalize } from 'path';
@@ -10,6 +13,16 @@ import { fileURLToPath } from 'url';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = join(__dirname, '../dist');
 const PORT = Number(process.env.PORT) || 8080;
+
+/** @param {string | null} url */
+function isValidProxyUrl(url) {
+    return url && /^https?:\/\//i.test(url);
+}
+
+/** @param {unknown} err */
+function hasCode(err, code) {
+    return err && typeof err === 'object' && 'code' in err && err.code === code;
+}
 
 const MIME = {
     '.html': 'text/html',
@@ -77,7 +90,7 @@ async function serveStatic(res, pathname) {
         res.writeHead(200, { 'Content-Type': contentType });
         res.end(data);
     } catch (err) {
-        if (err.code === 'ENOENT') {
+        if (hasCode(err, 'ENOENT')) {
             try {
                 const data = await readFile(join(ROOT, 'index.html'));
                 res.writeHead(200, { 'Content-Type': 'text/html' }).end(data);
@@ -96,7 +109,7 @@ const server = createServer(async (req, res) => {
 
     if (req.method === 'GET' && pathname === '/proxy') {
         const targetUrl = url.searchParams.get('url');
-        if (!targetUrl || !/^https?:\/\//i.test(targetUrl)) {
+        if (!isValidProxyUrl(targetUrl)) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Invalid url parameter' }));
             return;

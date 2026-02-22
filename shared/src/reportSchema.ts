@@ -52,7 +52,7 @@ export type SafeParseReportFailure = { success: false; error: z.ZodError };
 export const safeParseReport = (data: unknown): SafeParseReportSuccess | SafeParseReportFailure => {
     const result = reportSchema.safeParse(data);
     if (result.success) {
-        return { success: true, data: result.data as HelmGuardReport };
+        return { success: true, data: result.data };
     }
     return { success: false, error: result.error };
 };
