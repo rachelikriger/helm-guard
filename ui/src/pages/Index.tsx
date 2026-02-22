@@ -36,7 +36,15 @@ const Index = () => {
                 setLoadError(null);
                 const response = await fetch(`/proxy?url=${encodeURIComponent(reportUrl)}`);
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch report (${response.status})`);
+                    let msg = `Failed to fetch report (${response.status})`;
+                    try {
+                        const errBody = await response.json();
+                        if (errBody.error) msg = errBody.error;
+                        if (errBody.hint) msg += ` — ${errBody.hint}`;
+                    } catch {
+                        /* ignore */
+                    }
+                    throw new Error(msg);
                 }
 
                 const data = await response.json();
@@ -44,7 +52,9 @@ const Index = () => {
                 if (parsed.success) {
                     if (isMounted) setReport(parsed.data);
                 } else {
-                    throw new Error((parsed as SafeParseReportFailure).error.message ?? 'Invalid report format');
+                    const err = (parsed as SafeParseReportFailure).error;
+                    const msg = err?.message ?? 'Invalid report format';
+                    throw new Error(typeof msg === 'string' ? msg : 'Invalid report format');
                 }
             } catch (error) {
                 if (isMounted) {

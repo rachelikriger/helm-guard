@@ -19,18 +19,17 @@ COPY ui ./ui
 RUN npm --prefix ./ui run build
 
 # ---------- runtime ----------
-FROM nginx:1.25-alpine AS runtime
+FROM node:20-alpine AS runtime
 
-COPY ui/nginx.conf.template /etc/nginx/conf.d/default.conf.template
-COPY ui/entrypoint.sh /entrypoint.sh
-COPY --from=build /app/ui/dist/ /usr/share/nginx/html/
+WORKDIR /app
 
-RUN chmod +x /entrypoint.sh
+COPY --from=build /app/ui/dist/ ./dist/
+COPY ui/server/index.mjs ./server/
 
 # OpenShift runs with a random UID; keep runtime dirs group-writable for GID 0.
-RUN chgrp -R 0 /usr/share/nginx/html /var/cache/nginx /var/run /entrypoint.sh \
-  && chmod -R g=u /usr/share/nginx/html /var/cache/nginx /var/run
+RUN chgrp -R 0 /app && chmod -R g=u /app
 
+ENV PORT=8080
 EXPOSE 8080
 USER 1001:0
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["node", "server/index.mjs"]
