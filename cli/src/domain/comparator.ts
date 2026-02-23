@@ -1,21 +1,16 @@
 import { diff, Diff } from 'deep-diff';
 import { ComparisonResult, DIFF_ACTION, DiffActionInternal, K8sResource, ResourceStatus } from './types';
-import { normalizeResource } from './normalization/resourceNormalizer';
 import { shouldIncludeDiff } from './normalization/shouldIncludeDiff';
 import { fromSegmentsToPath } from './normalization/path';
 export const compareResources = (
     helm: K8sResource[],
     live: K8sResource[],
     strict: boolean,
-    targetNamespace: string,
 ): ComparisonResult[] => {
     const results: ComparisonResult[] = [];
 
-    const helmResources = helm.map(normalizeResource).map(resource => applyNamespaceFallback(resource, targetNamespace));
-    const liveResources = live.map(normalizeResource).filter(resource => isNamespaceMatch(resource, targetNamespace));
-
-    const helmMap = mapByKey(helmResources);
-    const liveMap = mapByKey(liveResources);
+    const helmMap = mapByKey(helm);
+    const liveMap = mapByKey(live);
 
     const helmKeys = Array.from(helmMap.keys()).sort((a, b) => a.localeCompare(b));
     const liveKeys = Array.from(liveMap.keys()).sort((a, b) => a.localeCompare(b));
@@ -122,23 +117,4 @@ const buildResourceKey = (resource: K8sResource): string => {
     const name = resource.metadata.name.trim();
     const namespace = resource.metadata.namespace?.trim() ?? '';
     return `${kind}/${namespace}/${name}`;
-};
-
-const isNamespaceMatch = (resource: K8sResource, targetNamespace: string): boolean => {
-    const namespace = resource.metadata.namespace?.trim();
-    return namespace === targetNamespace.trim();
-};
-
-const applyNamespaceFallback = (resource: K8sResource, targetNamespace: string): K8sResource => {
-    if (resource.metadata.namespace && resource.metadata.namespace.trim().length > 0) {
-        return resource;
-    }
-
-    return {
-        ...resource,
-        metadata: {
-            ...resource.metadata,
-            namespace: targetNamespace.trim(),
-        },
-    };
 };
