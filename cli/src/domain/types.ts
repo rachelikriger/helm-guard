@@ -1,19 +1,21 @@
+/**
+ * CLI domain types: CLI-specific types + re-exports of shared types used by CLI.
+ * Types used only by CLI stay here; shared types used by both CLI and UI live in @helm-guard/shared.
+ */
 import {
     DiffAction as ReportDiffAction,
     DiffItem,
-    DiffPath,
     HelmGuardReport,
     K8sKind,
     Mode,
     ReportConfig,
     ReportSummary,
-    ResourceIdentifier,
     ResourceResult,
     ResourceStatus,
 } from '@helm-guard/shared';
 
 /* =========================
-   Kubernetes domain types
+   Kubernetes domain types (CLI-only)
    ========================= */
 
 export interface K8sResource {
@@ -39,6 +41,21 @@ export interface HelmRenderOptions {
     valuesFiles?: string[];
     setValues?: string[];
 }
+
+export interface CliOptions {
+    chart: string;
+    namespace: string;
+    mode?: Mode | string;
+    strict: boolean;
+    release?: string;
+    values: string[];
+    set: string[];
+    output?: string;
+}
+
+export type ComparisonParams = Pick<CliOptions, 'chart' | 'namespace' | 'strict'> & {
+    helmRenderOptions: HelmRenderOptions;
+};
 
 /* =========================
    Execution modes
@@ -75,19 +92,22 @@ export type Difference = DiffItem;
 
 export type ComparisonResult = ResourceResult;
 
+export interface ComparisonOutcome {
+    results: ComparisonResult[];
+    whitelistedKinds: K8sKind[];
+}
+
 /* =========================
-   Report (shared contract)
+   Re-exports from shared
    ========================= */
 
 export type {
     HelmGuardReport,
     ReportConfig,
     ReportSummary,
-    ResourceIdentifier,
     ReportDiffAction as DiffAction,
     Mode,
     K8sKind,
-    DiffPath,
 };
 
 export { ResourceStatus };

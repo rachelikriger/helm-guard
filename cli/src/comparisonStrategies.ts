@@ -2,20 +2,14 @@ import { compareResources } from './domain/comparator';
 import { renderHelmChart } from './boundaries/helm';
 import { fetchLiveResources } from './boundaries/openshift';
 import { normalizeResource } from './domain/normalization/resourceNormalizer';
-import { ComparisonResult, HelmRenderOptions, K8sKind, K8sResource, MODE } from './domain/types';
+import {
+    ComparisonOutcome,
+    ComparisonParams,
+    K8sKind,
+    K8sResource,
+    MODE,
+} from './domain/types';
 import { deriveKindWhitelist } from './domain/kindWhitelist';
-
-interface ComparisonParams {
-    chart: string;
-    namespace: string;
-    strict: boolean;
-    helmRenderOptions: HelmRenderOptions;
-}
-
-interface ComparisonOutcome {
-    results: ComparisonResult[];
-    whitelistedKinds: K8sKind[];
-}
 
 const applyNamespaceFallback = (resource: K8sResource, targetNamespace: string): K8sResource => {
     if (resource.metadata.namespace && resource.metadata.namespace.trim().length > 0) {

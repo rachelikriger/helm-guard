@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { HelmGuardReport } from './reportContract';
+import type { HelmGuardReport } from './types';
 
 const diffActionSchema = z.enum(['WARN', 'FAIL']);
 const resourceStatusSchema = z.enum(['MATCH', 'DRIFT', 'MISSING_LIVE', 'MISSING_HELM']);

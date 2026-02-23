@@ -1,22 +1,11 @@
 import fs from 'fs';
 import { Command } from 'commander';
+import type { CliOptions, ComparisonParams, ReportConfig } from './domain/types';
 import { MODE, Mode } from './domain/types';
-import type { ReportConfig } from './domain/types';
 import { printReport } from './boundaries/reporter';
 import { buildReport } from './domain/buildReport';
-import { validateHelmRenderOptions, validateInputs } from './validation/cli';
+import { parseMode, validateChartAndNamespace, validateHelmRenderOptions } from './validation/cli';
 import { runBootstrapComparison, runHelmManagedComparison } from './comparisonStrategies';
-
-type CliOptions = {
-    chart: string;
-    namespace: string;
-    mode?: Mode | string;
-    strict: boolean;
-    release?: string;
-    values: string[];
-    set: string[];
-    output?: string;
-};
 
 const program = new Command();
 
@@ -53,16 +42,17 @@ const main = async (): Promise<void> => {
         program.parse();
         const opts = program.opts<CliOptions>();
 
-        const mode = validateInputs(opts.chart, opts.namespace, opts.mode);
+        validateChartAndNamespace(opts.chart, opts.namespace);
+        const mode = parseMode(opts.mode);
         const helmRenderOptions = validateHelmRenderOptions(opts.release, opts.values, opts.set);
         const runComparison = mode === MODE.BOOTSTRAP ? runBootstrapComparison : runHelmManagedComparison;
-
-        const outcome = await runComparison({
+        const comparisonParams: ComparisonParams = {
             chart: opts.chart,
             namespace: opts.namespace,
             strict: opts.strict,
             helmRenderOptions,
-        });
+        };
+        const outcome = await runComparison(comparisonParams);
 
         if (opts.output) {
             const reportConfig: ReportConfig = {

@@ -1,4 +1,4 @@
-export { DiffAction, ResourceStatus } from "./reportContract";
+export { DiffAction, ResourceStatus } from "./types";
 export { reportSchema, safeParseReport } from "./reportSchema";
 export type {
   DiffItem,
@@ -11,5 +11,5 @@ export type {
   ReportSummary,
   ResourceIdentifier,
   ResourceResult,
-} from "./reportContract";
+} from "./types";
 export type { SafeParseReportFailure, SafeParseReportSuccess } from "./reportSchema";

@@ -6,7 +6,7 @@ variables:
     HELM_GUARD_CLI_IMAGE: 'image-registry.openshift.svc:5000/<ns>/helm-guard-cli:stable'
     HELM_CHART_PATH: '$CI_PROJECT_DIR'
 
-helm_guard_validate:
+.helm_guard_validate:
     stage: validate
     image: '$HELM_GUARD_CLI_IMAGE'
 

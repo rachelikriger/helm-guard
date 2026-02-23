@@ -1,7 +1,12 @@
 import fs from 'fs';
 import { HelmRenderOptions, MODE, Mode } from '../domain/types';
 
-export const validateInputs = (chart: string, namespace: string, mode?: Mode | string): Mode => {
+export const parseMode = (value: unknown): Mode => {
+    if (value === MODE.BOOTSTRAP || value === MODE.HELM_MANAGED) return value;
+    throw new Error(`Invalid CLI input: Mode must be either "${MODE.BOOTSTRAP}" or "${MODE.HELM_MANAGED}"`);
+};
+
+export const validateChartAndNamespace = (chart: string, namespace: string): void => {
     if (!chart || !fs.existsSync(chart)) {
         throw new Error(`Invalid CLI input: Chart path does not exist: ${chart}`);
     }
@@ -9,14 +14,6 @@ export const validateInputs = (chart: string, namespace: string, mode?: Mode | s
     if (!namespace || !namespace.trim()) {
         throw new Error('Invalid CLI input: Namespace is required and cannot be empty');
     }
-
-    const modeValue = mode ?? MODE.BOOTSTRAP;
-
-    if (modeValue === MODE.BOOTSTRAP || modeValue === MODE.HELM_MANAGED) {
-        return modeValue;
-    }
-
-    throw new Error(`Invalid CLI input: Mode must be either "${MODE.BOOTSTRAP}" or "${MODE.HELM_MANAGED}"`);
 };
 
 export const validateHelmRenderOptions = (
@@ -30,6 +27,11 @@ export const validateHelmRenderOptions = (
         const name = typeof releaseName === 'string' ? releaseName : String(releaseName ?? '');
         if (!name.trim()) {
             throw new Error('Invalid CLI input: Release name must be a non-empty string');
+        }
+        if (/\s/.test(name)) {
+            throw new Error(
+                'Invalid CLI input: Release name cannot contain spaces (must follow Kubernetes DNS-1123)',
+            );
         }
         options.releaseName = name;
     }

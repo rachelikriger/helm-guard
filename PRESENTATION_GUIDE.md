@@ -32,7 +32,7 @@
 **למה להתחיל כאן?** כי זה ה-**contract** בין CLI ל-UI. כל מה שמוגדר כאן חייב להיות מובן.
 
 ### קבצים:
-- `shared/src/reportContract.ts` – טיפוסי TypeScript
+- `shared/src/types/` – טיפוסי TypeScript (common, result, report)
 - `shared/src/reportSchema.ts` – ולידציה עם Zod
 - `shared/src/index.ts` – re-exports
 
@@ -46,6 +46,7 @@
 | **DiffItem** | path + helmValue + liveValue + action |
 
 ### החלטות עיצוב:
+- **shared = משותף** – רק טיפוסים ששניהם (CLI ו-UI) משתמשים בהם. טיפוסים ל-CLI בלבד → `cli/domain/types.ts`, ל-UI בלבד → `ui/src/types/`
 - **Zod** – ולידציה של JSON נכנס (UI, proxy) – אם הדוח לא תואם schema, נזרק שגיאה ברורה
 - **schemaVersion: 1** – מאפשר שינויי schema בעתיד בלי לשבור תאימות
 - **shared** נבנה ראשון – CLI ו-UI תלויים בו (`prebuild` ב-package.json)
@@ -62,7 +63,7 @@
 
 **Flow:**
 1. `commander` מפרסר ארגומנטים
-2. `validateInputs` + `validateHelmRenderOptions` – ולידציה
+2. `validateChartAndNamespace` + `validateHelmRenderOptions` – ולידציה
 3. `runBootstrapComparison` או `runHelmManagedComparison` (האחרון עדיין לא מיושם)
 4. אם `--output` – `buildReport` + כתיבה ל-JSON
 5. `printReport` – הדפסה לקונסול + exit code
@@ -223,7 +224,7 @@
 ## 7. סדר למידה מומלץ (להרצאה)
 
 1. **README** – התמונה הגדולה
-2. **shared** – reportContract + reportSchema
+2. **shared** – types/ + reportSchema
 3. **CLI index** – flow מלא
 4. **comparisonStrategies** – render → fetch → compare
 5. **helm.ts + openshift.ts** – איך מתקשרים עם העולם החיצון
