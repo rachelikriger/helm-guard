@@ -1,4 +1,4 @@
-import type { DiffPath, K8sKind } from './common';
+import type { DiffPath, K8sKind } from './primitives';
 
 export const DiffAction = {
     WARN: 'WARN',

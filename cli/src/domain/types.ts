@@ -7,6 +7,7 @@ import {
     DiffItem,
     HelmGuardReport,
     K8sKind,
+    MODE,
     Mode,
     ReportConfig,
     ReportSummary,
@@ -58,13 +59,10 @@ export type ComparisonParams = Pick<CliOptions, 'chart' | 'namespace' | 'strict'
 };
 
 /* =========================
-   Execution modes
+   Execution modes (re-export from shared)
    ========================= */
 
-export const MODE = {
-    BOOTSTRAP: 'bootstrap',
-    HELM_MANAGED: 'helm-managed',
-} as const;
+export { MODE };
 
 /* =========================
    Diff & comparison domain

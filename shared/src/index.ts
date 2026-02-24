@@ -1,4 +1,4 @@
-export { DiffAction, ResourceStatus } from "./types";
+export { DiffAction, MODE, ResourceStatus } from "./types";
 export { reportSchema, safeParseReport } from "./reportSchema";
 export type {
   DiffItem,

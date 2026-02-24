@@ -1,4 +1,4 @@
-import type { Mode, K8sKind } from './common';
+import type { Mode, K8sKind } from './primitives';
 import type { ResourceResult } from './result';
 
 export interface ReportConfig {

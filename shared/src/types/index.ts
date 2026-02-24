@@ -3,7 +3,8 @@
  * Only include types used by BOTH. CLI-only or UI-only types belong in their respective packages.
  */
 export { DiffAction, ResourceStatus } from './result';
-export type { DiffPath, K8sKind, Mode } from './common';
+export { MODE } from './primitives';
+export type { DiffPath, K8sKind, Mode } from './primitives';
 export type { DiffItem, ResourceIdentifier, ResourceResult } from './result';
 export type {
     HelmGuardReport,

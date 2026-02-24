@@ -1,7 +1,15 @@
-import { ComparisonResult, CountableAction, DIFF_ACTION, HelmGuardReport, ReportConfig, ResourceStatus } from './types';
+import {
+    ComparisonResult,
+    CountableAction,
+    DIFF_ACTION,
+    HelmGuardReport,
+    ReportConfig,
+    ReportSummary,
+    ResourceStatus,
+} from './types';
 
 export const buildReport = (results: ComparisonResult[], config: ReportConfig): HelmGuardReport => {
-    const summary = {
+    const summary: ReportSummary = {
         total: results.length,
         matched: countByStatus(results, ResourceStatus.MATCH),
         drifted: countByStatus(results, ResourceStatus.DRIFT),
