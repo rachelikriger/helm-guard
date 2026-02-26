@@ -23,8 +23,9 @@ WORKDIR /app/cli
 ENV NODE_ENV=production
 ENV PATH="/app/cli/node_modules/.bin:$PATH"
 
-# shared runtime artifacts
-COPY --chown=1001:0 --from=build /app/shared/package.json /app/shared/package.json
+# shared runtime artifacts + deps (zod must be in shared/node_modules for require resolution)
+COPY --chown=1001:0 --from=build /app/shared/package.json /app/shared/package-lock.json /app/shared/
+RUN npm --prefix /app/shared ci --omit=dev && npm cache clean --force
 COPY --chown=1001:0 --from=build /app/shared/dist /app/shared/dist
 
 # cli runtime deps
