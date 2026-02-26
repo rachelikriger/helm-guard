@@ -6,6 +6,7 @@ export const renderHelmChart = async (
     chartPath: string,
     namespace: string,
     options: HelmRenderOptions,
+    contextLabel?: string,
 ): Promise<K8sResource[]> => {
     const args = ['template'];
 
@@ -27,10 +28,11 @@ export const renderHelmChart = async (
         }
     }
 
+    const contextSuffix = contextLabel ? ` (${contextLabel} mode)` : '';
     const result = await runCommand(
         'helm',
         args,
-        `run "helm template" for chart ${chartPath} in namespace ${namespace}`,
+        `run "helm template" for chart ${chartPath} in namespace ${namespace}${contextSuffix}`,
     );
 
     const resources: K8sResource[] = [];

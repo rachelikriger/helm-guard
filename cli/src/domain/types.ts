@@ -23,7 +23,8 @@ export interface K8sResource {
     apiVersion: string;
     kind: K8sKind;
     metadata: {
-        name: string;
+        name?: string;
+        generateName?: string;
         namespace?: string;
         labels?: Record<string, string>;
         annotations?: Record<string, string>;

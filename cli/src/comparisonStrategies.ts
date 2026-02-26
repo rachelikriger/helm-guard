@@ -24,27 +24,18 @@ const applyNamespaceFallback = (resource: K8sResource, targetNamespace: string):
     };
 };
 
-const isNamespaceMatch = (resource: K8sResource, targetNamespace: string): boolean => {
-    const namespace = resource.metadata.namespace?.trim();
-    return namespace === targetNamespace.trim();
-};
-
 /**
  * Default bootstrap comparison: render Helm chart, fetch whitelisted live resources, compare.
  */
 export const runBootstrapComparison = async (params: ComparisonParams): Promise<ComparisonOutcome> => {
-    const rawHelm = await renderHelmChart(params.chart, params.namespace, params.helmRenderOptions);
+    const rawHelm = await renderHelmChart(params.chart, params.namespace, params.helmRenderOptions, MODE.BOOTSTRAP);
     const whitelistedKinds = deriveKindWhitelist(rawHelm);
-    const rawLive = await fetchLiveResources(params.namespace, whitelistedKinds, {
-        contextLabel: MODE.BOOTSTRAP,
-    });
+    const rawLive = await fetchLiveResources(params.namespace, whitelistedKinds, MODE.BOOTSTRAP);
 
     const helmResources = rawHelm
         .map(normalizeResource)
         .map(r => applyNamespaceFallback(r, params.namespace));
-    const liveResources = rawLive
-        .map(normalizeResource)
-        .filter(r => isNamespaceMatch(r, params.namespace));
+    const liveResources = rawLive.map(normalizeResource);
 
     return {
         whitelistedKinds,

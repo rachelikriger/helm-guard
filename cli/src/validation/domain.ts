@@ -10,7 +10,10 @@ export const isK8sResource = (val: unknown): val is K8sResource => {
 
     const meta = val.metadata;
     if (!isRecord(meta)) return false;
-    if (typeof meta.name !== 'string') return false;
+
+    const hasName = typeof meta.name === 'string' && meta.name.trim().length > 0;
+    const hasGenerateName = typeof meta.generateName === 'string' && meta.generateName.trim().length > 0;
+    if (!hasName && !hasGenerateName) return false;
 
     return true;
 };

@@ -16,12 +16,9 @@ export const compareResources = (
     const liveKeys = Array.from(liveMap.keys()).sort((a, b) => a.localeCompare(b));
 
     for (const key of helmKeys) {
-        const helmRes = helmMap.get(key);
-        if (!helmRes) {
-            continue;
-        }
-        const liveRes = liveMap.get(key);
-        if (!liveRes) {
+        const helmResource = helmMap.get(key)!;
+        const liveResource = liveMap.get(key);
+        if (!liveResource) {
             results.push({
                 resourceKey: key,
                 status: ResourceStatus.MISSING_LIVE,
@@ -31,12 +28,12 @@ export const compareResources = (
         }
 
         // Diff lifecycle: deep-diff candidate -> format path -> shouldIncludeDiff gate -> report entry.
-        const diffs = diff<K8sResource, K8sResource>(helmRes, liveRes) ?? [];
+        const diffs = diff<K8sResource, K8sResource>(helmResource, liveResource) ?? [];
         const differences = diffs
             .map(d => {
                 const path = fromSegmentsToPath(d.path, d.kind === 'A' ? d.index : undefined);
                 const { helmValue, liveValue } = extractDiffValues(d);
-                if (!shouldIncludeDiff({ resourceKind: helmRes.kind, liveResource: liveRes, path, helmValue, liveValue })) {
+                if (!shouldIncludeDiff({ resourceKind: helmResource.kind, liveResource, path, helmValue, liveValue })) {
                     return {
                         path,
                         helmValue,
@@ -114,7 +111,10 @@ const mapByKey = (resources: K8sResource[]): Map<string, K8sResource> => {
 
 const buildResourceKey = (resource: K8sResource): string => {
     const kind = resource.kind.trim();
-    const name = resource.metadata.name.trim();
+    const name =
+        resource.metadata.name?.trim() ||
+        resource.metadata.generateName?.trim() ||
+        'unknown';
     const namespace = resource.metadata.namespace?.trim() ?? '';
     return `${kind}/${namespace}/${name}`;
 };

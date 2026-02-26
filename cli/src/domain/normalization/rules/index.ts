@@ -1,3 +1,8 @@
+/**
+ * Platform default rules: suppress diffs where Live has a value the cluster adds by default.
+ * Only add rules for documented defaults. Avoid over-normalization—it may hide real drift.
+ * Refs: Kubernetes API Reference, OpenShift Image Pull Policy docs.
+ */
 import { buildConfigRules } from './buildConfigRules';
 import { cronJobRules } from './cronJobRules';
 import { coreRules } from './coreRules';
